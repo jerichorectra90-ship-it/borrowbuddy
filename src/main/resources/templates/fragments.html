@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="header(user)">
+    <strong class="brand">BorrowBuddy</strong>
+    <nav>
+        <a th:href="@{/items}">Items</a>
+        <a th:href="@{/requests}" th:unless="${user.admin}">Requests</a>
+        <a th:href="@{/records}" th:text="${user.admin} ? 'All records (admin)' : 'My records'">Records</a>
+        <a th:href="@{/profile}">Profile</a>
+        <a th:href="@{/logout}">Log out</a>
+    </nav>
+    <span class="who" th:text="${user.fullName + ' · ' + user.role}">Name</span>
+</header>
+</body>
+</html>

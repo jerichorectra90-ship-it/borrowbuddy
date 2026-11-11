@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Register · BorrowBuddy</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<main class="narrow">
+    <div class="card">
+        <h1>Create your account</h1>
+        <div class="error" th:if="${error}" th:text="${error}"></div>
+        <form method="post" th:action="@{/register}" class="stack">
+            <label>Full name
+                <input type="text" name="fullName" required th:value="${form['fullName']}">
+            </label>
+            <label>UST-L email
+                <input type="email" name="email" placeholder="name@ust-legazpi.edu.ph" required th:value="${form['email']}">
+            </label>
+            <label>Student ID
+                <input type="text" name="studentId" required th:value="${form['studentId']}">
+            </label>
+            <label>Password
+                <input type="password" name="password" minlength="6" required>
+            </label>
+            <label>Course
+                <input type="text" name="course" placeholder="e.g. BSIT" required th:value="${form['course']}">
+            </label>
+            <label>Year level
+                <select name="yearLevel">
+                    <option th:each="y : ${#numbers.sequence(1, 5)}" th:value="${y}" th:text="${'Year ' + y}"
+                            th:selected="${'' + y == form['yearLevel']}"></option>
+                </select>
+            </label>
+            <label>Block
+                <input type="text" name="block" placeholder="e.g. 2G" required th:value="${form['block']}">
+            </label>
+            <label>Contact info
+                <input type="text" name="contactInfo" placeholder="Messenger name or phone" required th:value="${form['contactInfo']}">
+            </label>
+            <label>I am a
+                <select name="role">
+                    <option value="Student">Student</option>
+                    <option value="OrgOfficer" th:selected="${form['role'] == 'OrgOfficer'}">Student organization officer</option>
+                </select>
+            </label>
+            <label>Organization (officers only)
+                <input type="text" name="organization" placeholder="e.g. Computer Society" th:value="${form['organization']}">
+            </label>
+            <button type="submit">Register</button>
+        </form>
+        <p><a th:href="@{/}">Back to log in</a></p>
+    </div>
+</main>
+</body>
+</html>

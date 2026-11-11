@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Requests · BorrowBuddy</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<header th:replace="~{fragments :: header(${user})}"></header>
+<main>
+    <div class="msg" th:if="${message}" th:text="${message}"></div>
+
+    <h2>Requests for your items</h2>
+    <div class="card" th:each="r : ${incoming}">
+        <div class="row top">
+            <div class="grow">
+                <strong th:text="${r.item.name}">Item</strong>
+                <span class="badge b-pending">Pending</span>
+                <div class="muted" th:text="${r.borrower.fullName + ' · ' + r.borrower.profile + ' · ' + r.borrower.profile.contactInfo}"></div>
+                <div class="muted small" th:text="${'Wants it for ' + r.requestedDays + ' day(s) · requested ' + r.requestDate}"></div>
+            </div>
+            <div class="row">
+                <form method="post" th:action="@{/requests/approve}">
+                    <input type="hidden" name="recordId" th:value="${r.id}">
+                    <button type="submit">Approve</button>
+                </form>
+                <form method="post" th:action="@{/requests/decline}">
+                    <input type="hidden" name="recordId" th:value="${r.id}">
+                    <button type="submit" class="secondary">Decline</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <p class="muted" th:if="${#lists.isEmpty(incoming)}">No requests waiting for you.</p>
+
+    <h2>Your requests</h2>
+    <div class="card" th:each="r : ${outgoing}">
+        <strong th:text="${r.item.name}">Item</strong>
+        <span class="badge" th:classappend="${'b-' + #strings.toLowerCase(r.status)}" th:text="${r.status}"></span>
+        <div class="muted" th:text="${'Owner: ' + r.lender.fullName + ' (' + r.lender.profile.contactInfo + ')'}"></div>
+        <div class="muted small" th:text="${r.requestedDays + ' day(s) · requested ' + r.requestDate}"></div>
+    </div>
+    <p class="muted" th:if="${#lists.isEmpty(outgoing)}">
+        No pending or declined requests. Approved ones appear in My records.
+    </p>
+</main>
+</body>
+</html>

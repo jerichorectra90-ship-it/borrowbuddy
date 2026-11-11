@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Profile · BorrowBuddy</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+<body>
+<header th:replace="~{fragments :: header(${user})}"></header>
+<main>
+    <div class="msg" th:if="${message}" th:text="${message}"></div>
+
+    <div class="card">
+        <h2 th:text="${user.fullName}">Name</h2>
+        <p class="muted" th:text="${user.role}">Role</p>
+        <dl class="details">
+            <dt>UST-L account</dt><dd th:text="${user.ustlAccount}"></dd>
+            <dt th:text="${user.admin} ? 'Staff ID' : 'Student ID'">ID</dt><dd th:text="${user.studentId ?: '—'}"></dd>
+            <dt>Course</dt><dd th:text="${user.profile.course}"></dd>
+            <dt>Year level</dt><dd th:text="${user.profile.yearLevel}"></dd>
+            <dt>Block</dt><dd th:text="${user.profile.block}"></dd>
+            <dt>Contact info</dt><dd th:text="${user.profile.contactInfo}"></dd>
+            <dt>Borrow limit</dt>
+            <dd th:text="${user.admin} ? 'Admin account (monitors records)' : ${user.borrowLimit + ' item(s) at a time'}"></dd>
+        </dl>
+    </div>
+
+    <div class="card">
+        <h3>Edit profile</h3>
+        <form method="post" th:action="@{/profile}" class="stack">
+            <label>Course <input type="text" name="course" required th:value="${user.profile.course}"></label>
+            <label>Year level
+                <select name="yearLevel">
+                    <option th:each="y : ${#numbers.sequence(1, 5)}" th:value="${y}" th:text="${'Year ' + y}"
+                            th:selected="${y == user.profile.yearLevel}"></option>
+                </select>
+            </label>
+            <label>Block <input type="text" name="block" required th:value="${user.profile.block}"></label>
+            <label>Contact info <input type="text" name="contactInfo" required th:value="${user.profile.contactInfo}"></label>
+            <button type="submit">Save</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>
