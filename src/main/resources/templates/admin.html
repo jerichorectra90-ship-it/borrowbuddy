@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Admin dashboard')}"></head>
+<body>
+<header th:replace="~{fragments :: header(${user}, 'admin')}"></header>
+<main>
+    <div class="page-head">
+        <div>
+            <h1>Admin dashboard</h1>
+            <p>Lab staff overview: who is borrowing, what is out, and what is overdue.</p>
+        </div>
+        <a class="btn ghost" th:href="@{/records(filter='overdue')}">Open overdue records</a>
+    </div>
+
+    <div class="stats">
+        <div class="card stat"><div class="num" th:text="${userCount}">0</div><div class="lbl">Students &amp; officers</div><div class="sub">registered accounts</div></div>
+        <div class="card stat"><div class="num" th:text="${itemCount}">0</div><div class="lbl">Listed items</div>
+            <div class="sub" th:text="${available + ' available · ' + reserved + ' reserved'}"></div></div>
+        <div class="card stat warn"><div class="num" th:text="${borrowed}">0</div><div class="lbl">Currently borrowed</div><div class="sub">approved and not yet returned</div></div>
+        <div class="card stat"><div class="num" th:text="${#lists.size(pending)}">0</div><div class="lbl">Pending requests</div><div class="sub">waiting for the owner</div></div>
+        <div class="card stat bad"><div class="num" th:text="${#lists.size(overdue)}">0</div><div class="lbl">Overdue</div><div class="sub">past the due date</div></div>
+        <div class="card stat ok"><div class="num" th:text="${returnedCount}">0</div><div class="lbl">Returned</div><div class="sub">completed borrows</div></div>
+    </div>
+
+    <h2 class="section-title">Overdue items <span class="chip" th:text="${#lists.size(overdue)}">0</span></h2>
+    <div class="card table-wrap" th:unless="${#lists.isEmpty(overdue)}">
+        <table>
+            <thead><tr><th>Item</th><th>Borrower</th><th>Owner</th><th>Due</th><th>Days late</th></tr></thead>
+            <tbody>
+            <tr class="overdue-row" th:each="r : ${overdue}">
+                <td><strong th:text="${r.item.name}">Item</strong></td>
+                <td><span th:text="${r.borrower.fullName}">b</span><br><span class="faint small" th:text="${r.borrower.profile.contactInfo}"></span></td>
+                <td><span th:text="${r.lender.fullName}">o</span><br><span class="faint small" th:text="${r.lender.profile.contactInfo}"></span></td>
+                <td th:text="${r.dueDate}">date</td>
+                <td><span class="badge b-overdue" th:text="${r.daysOverdue}">1</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card empty" th:if="${#lists.isEmpty(overdue)}"><p>Nothing is overdue. 🎉</p></div>
+
+    <h2 class="section-title">Pending requests</h2>
+    <div class="card table-wrap" th:unless="${#lists.isEmpty(pending)}">
+        <table>
+            <thead><tr><th>Item</th><th>Requested by</th><th>Owner</th><th>Days</th><th>Requested</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${pending}">
+                <td><strong th:text="${r.item.name}">Item</strong></td>
+                <td th:text="${r.borrower.fullName}">b</td>
+                <td th:text="${r.lender.fullName}">o</td>
+                <td th:text="${r.requestedDays}">2</td>
+                <td th:text="${r.requestDate}">date</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card empty" th:if="${#lists.isEmpty(pending)}"><p>No pending requests.</p></div>
+
+    <h2 class="section-title">Users</h2>
+    <div class="card table-wrap">
+        <table>
+            <thead><tr><th>Name</th><th>Role</th><th>UST-L account</th><th>Course</th><th>Listed</th><th>Borrowing</th></tr></thead>
+            <tbody>
+            <tr th:each="u : ${users}">
+                <td><strong th:text="${u.fullName}">Name</strong><br><span class="faint small" th:text="${u.studentId}"></span></td>
+                <td><span th:replace="~{fragments :: role(${u})}"></span></td>
+                <td th:text="${u.ustlAccount}">email</td>
+                <td th:text="${u.admin} ? ${u.profile.course} : ${u.profile}">course</td>
+                <td th:text="${u.admin} ? '—' : ${listedPerUser[u.id] ?: 0}">0</td>
+                <td th:text="${u.admin} ? '—' : ${openPerUser[u.id] + ' / ' + u.borrowLimit}">0</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

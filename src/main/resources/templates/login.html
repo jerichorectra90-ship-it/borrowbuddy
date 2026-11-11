@@ -1,31 +1,53 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>BorrowBuddy</title>
-    <link rel="stylesheet" th:href="@{/style.css}">
-</head>
+<head th:replace="~{fragments :: head('Log in')}"></head>
 <body>
-<main class="narrow">
-    <div class="card">
-        <h1>BorrowBuddy</h1>
-        <p class="muted">Peer-to-peer academic resource borrowing for UST-Legazpi students.</p>
-        <div class="error" th:if="${error}" th:text="${error}"></div>
-        <form method="post" th:action="@{/login}" class="stack">
-            <input type="text" name="account" placeholder="UST-L email or student ID" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Log in</button>
-        </form>
-        <p>No account yet? <a th:href="@{/register}">Register with your UST-L account</a></p>
-    </div>
-    <div class="card muted small">
-        <strong>Demo accounts</strong> (password: borrow123)<br>
-        Student: jericho.rectra@ust-legazpi.edu.ph or 2024-00123<br>
-        Student: maria.santos@ust-legazpi.edu.ph<br>
-        Org officer: paolo.reyes@ust-legazpi.edu.ph<br>
-        Lab staff (admin): delacruz@ust-legazpi.edu.ph
-    </div>
-</main>
+<div class="auth">
+    <section class="auth-hero">
+        <span class="brand"><span class="logo">B</span>BorrowBuddy</span>
+        <h1>Borrow what you need.<br>Lend what you don't.</h1>
+        <p>Peer-to-peer academic resource borrowing for UST-Legazpi students: calculators, lab tools, and chargers.</p>
+        <div class="steps">
+            <div class="step"><b>1</b><span>Log in with your UST-L email or student ID.</span></div>
+            <div class="step"><b>2</b><span>Lend an item, or request one that is Available.</span></div>
+            <div class="step"><b>3</b><span>The owner approves, sets the due date, and marks it returned.</span></div>
+        </div>
+    </section>
+
+    <section class="auth-form">
+        <div class="card">
+            <h2>Welcome back</h2>
+            <p class="muted small">Log in to borrow or lend items.</p>
+            <div class="alert bad" th:if="${error}" th:text="${error}" style="margin-top:12px"></div>
+            <form method="post" th:action="@{/login}" class="stack" style="margin-top:16px">
+                <label class="field">UST-L email or student ID
+                    <input type="text" id="account" name="account" placeholder="name@ust-legazpi.edu.ph" required autocomplete="username">
+                </label>
+                <label class="field">Password
+                    <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+                </label>
+                <button type="submit" class="block">Log in</button>
+            </form>
+            <p class="small" style="margin-top:14px">No account yet? <a th:href="@{/register}">Create one with your UST-L email</a></p>
+
+            <div class="divider">Demo accounts · password borrow123</div>
+            <div class="demo">
+                <button type="button" data-acc="jericho.rectra@ust-legazpi.edu.ph"><span>Jericho Rectra</span><span class="chip student">Student</span></button>
+                <button type="button" data-acc="maria.santos@ust-legazpi.edu.ph"><span>Maria Santos</span><span class="chip student">Student</span></button>
+                <button type="button" data-acc="paolo.reyes@ust-legazpi.edu.ph"><span>Paolo Reyes</span><span class="chip officer">Org officer</span></button>
+                <button type="button" data-acc="delacruz@ust-legazpi.edu.ph"><span>Engr. Dela Cruz</span><span class="chip admin">Lab staff · Admin</span></button>
+            </div>
+        </div>
+    </section>
+</div>
+<script>
+    document.querySelectorAll('.demo button').forEach(function (b) {
+        b.addEventListener('click', function () {
+            document.getElementById('account').value = b.dataset.acc;
+            document.getElementById('password').value = 'borrow123';
+            b.closest('.card').querySelector('form').submit();
+        });
+    });
+</script>
 </body>
 </html>

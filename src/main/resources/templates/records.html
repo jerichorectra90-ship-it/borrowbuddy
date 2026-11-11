@@ -1,45 +1,57 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Records · BorrowBuddy</title>
-    <link rel="stylesheet" th:href="@{/style.css}">
-</head>
+<head th:replace="~{fragments :: head('Records')}"></head>
 <body>
-<header th:replace="~{fragments :: header(${user})}"></header>
+<header th:replace="~{fragments :: header(${user}, 'records')}"></header>
 <main>
-    <div class="msg" th:if="${message}" th:text="${message}"></div>
+    <div th:replace="~{fragments :: flash}"></div>
 
-    <h2 th:text="${user.admin} ? 'All lending records' : 'My lending records'">Records</h2>
-    <p class="muted small" th:unless="${user.admin}">Items you borrowed and items you lent. Only the owner can mark an item returned.</p>
+    <div class="page-head">
+        <div>
+            <h1 th:text="${user.admin} ? 'All lending records' : 'My lending records'">Records</h1>
+            <p th:unless="${user.admin}">Items you borrowed and items you lent. Only the owner can mark an item returned.</p>
+            <p th:if="${user.admin}">Every approved borrow in the system. Overdue items are flagged for follow-up.</p>
+        </div>
+    </div>
 
-    <div class="error" th:if="${overdueCount > 0}" th:text="${overdueCount + ' overdue item(s) need follow-up.'}"></div>
+    <div class="alert bad" th:if="${overdueCount > 0}">
+        <strong th:text="${overdueCount + ' overdue'}">1 overdue</strong>
+        <span>item(s) need follow-up. <a th:href="@{/records(filter='overdue')}">Show overdue</a></span>
+    </div>
 
     <nav class="tabs">
         <a th:each="f : ${filters}" th:href="@{/records(filter=${f})}"
            th:text="${#strings.capitalize(f)}" th:classappend="${f == filter} ? 'on'"></a>
     </nav>
 
-    <div class="card" th:each="r : ${records}">
-        <div class="row top">
+    <div class="card" th:each="r : ${records}" th:classappend="${r.overdue} ? 'is-overdue'">
+        <div class="rec">
             <div class="grow">
-                <strong th:text="${r.item.name}">Item</strong>
-                <span class="badge"
-                      th:classappend="${'b-' + #strings.replace(#strings.toLowerCase(r.statusLabel), ' ', '-')}"
-                      th:text="${r.statusLabel}"></span>
-                <div class="muted" th:text="${'Borrower: ' + r.borrower.fullName + ' (' + r.borrower.profile.contactInfo + ')'}"></div>
-                <div class="muted" th:text="${'Owner: ' + r.lender.fullName + ' (' + r.lender.profile.contactInfo + ')'}"></div>
-                <div class="muted small"
-                     th:text="${'Borrowed ' + r.borrowDate + ' · Due ' + r.dueDate + (r.returnDate != null ? ' · Returned ' + r.returnDate : '')}"></div>
+                <div class="row">
+                    <strong th:text="${r.item.name}">Item</strong>
+                    <span class="badge"
+                          th:classappend="${'b-' + #strings.replace(#strings.toLowerCase(r.statusLabel), ' ', '-')}"
+                          th:text="${r.statusLabel}"></span>
+                    <span class="chip" th:unless="${user.admin}"
+                          th:text="${r.isLentBy(user)} ? 'You lent this' : 'You borrowed this'"></span>
+                </div>
+                <div class="people">
+                    <b>Borrower</b><span th:text="${r.borrower.fullName + ' · ' + r.borrower.profile.contactInfo}">b</span>
+                    <b>Owner</b><span th:text="${r.lender.fullName + ' · ' + r.lender.profile.contactInfo}">o</span>
+                </div>
+                <div class="timeline">
+                    <div><small>Borrowed</small><span th:text="${r.borrowDate}">date</span></div>
+                    <div><small>Due</small><span th:text="${r.dueDate}" th:style="${r.overdue} ? 'color:var(--bad);font-weight:700'">date</span></div>
+                    <div th:if="${r.returnDate != null}"><small>Returned</small><span th:text="${r.returnDate}">date</span></div>
+                </div>
             </div>
             <form method="post" th:action="@{/records/return}" th:if="${r.active and r.isLentBy(user)}">
                 <input type="hidden" name="recordId" th:value="${r.id}">
-                <button type="submit">Mark returned</button>
+                <button type="submit" class="ok">Mark returned</button>
             </form>
         </div>
     </div>
-    <p class="muted" th:if="${#lists.isEmpty(records)}">No records here.</p>
+    <div class="card empty" th:if="${#lists.isEmpty(records)}"><p>No records here.</p></div>
 </main>
 </body>
 </html>

@@ -1,18 +1,19 @@
 # BorrowBuddy
 
 A Peer-to-Peer Academic Resource Borrowing System for UST-Legazpi Students.
-Java 25 (LTS) + Spring Boot (web pages with Thymeleaf), Supabase (Postgres) database, deployed on Render.
+Java 17 + Spring Boot 3.5 (web pages with Thymeleaf), Supabase (Postgres) database, deployed on Render.
 
 ## Deliverable 2: where each must-have feature is
 
 | # | Feature | Where |
 |---|---------|-------|
 | 1 | UST-L login and student profile | Log in with UST-L email or student ID + password. Register page and Profile page (full name, course, year level, block, contact info). `AuthController` |
-| 2 | Item listing | "Lend an item" form: name, category, description; owner is the logged-in user. `ItemController.add` |
+| 2 | Item listing | "Lend an item" page: name, category, description; owner is the logged-in user, who also sees their own listings there. `ItemController.lendForm / add` |
 | 3 | Item availability status | Every item shows Available / Reserved / Borrowed. Search by keyword and/or category. `BorrowService.searchItem` |
 | 4 | Borrow request and approval | Borrower clicks Request (item becomes Reserved). Owner approves (becomes Borrowed) or declines (back to Available) on the Requests page. `BorrowRecord.approve / decline` |
 | 5 | Lending records with due dates | My records page: borrower, owner, borrowed date, due date, return date. Lab staff see all records. |
 | 6 | Return and overdue tracking | Only the owner can "Mark returned". Overdue items are flagged in red, with an Overdue filter. `BorrowRecord.isOverdue` |
+| + | Admin dashboard (Lab staff) | Lab staff land on `/admin`: totals, overdue items with days late, pending requests, and all users with their borrow counts. Read-only monitoring. `AdminController` |
 
 Out of scope (scope note): payments, delivery, item deposits.
 
@@ -34,23 +35,4 @@ Out of scope (scope note): payments, delivery, item deposits.
 - Lab staff (admin): delacruz@ust-legazpi.edu.ph
 
 Demo data includes one returned record, one overdue record, and two pending requests.
-Suggested live demo: log in as Jericho, approve Maria's soldering kit request, then show My records.
-
-## Run locally
-1. Create a Supabase project. Click **Connect**, choose **Session pooler**, and copy host, user, and password.
-2. Set environment variables:
-   - `DB_URL=jdbc:postgresql://<pooler-host>:5432/postgres?sslmode=require`
-   - `DB_USER=<pooler user, looks like postgres.xxxxx>`
-   - `DB_PASSWORD=<your database password>`
-3. Run `mvn spring-boot:run`, then open http://localhost:8080
-   Tables are created automatically and demo data is added on first start.
-
-If you ran an older version of this project on the same database, delete the tables
-`borrow_records`, `items`, `app_users` in Supabase first so they are recreated cleanly.
-
-## Deploy on Render
-1. Push this folder to a GitHub repo (do not commit passwords).
-2. Render > New > Web Service > connect the repo > Runtime: Docker.
-3. Add the same 3 environment variables.
-4. Deploy, then open the Render URL on your laptop and phone.
-5. The free tier sleeps when idle. Open the link 5 to 10 minutes before presenting.
+Suggested live demo: log in as Jericho, approve Maria's soldering kit request, then show My records. Log in as Engr. Dela Cruz to show the Admin dashboard.

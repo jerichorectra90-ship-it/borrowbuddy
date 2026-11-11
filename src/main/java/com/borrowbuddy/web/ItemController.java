@@ -4,6 +4,7 @@ import com.borrowbuddy.model.*;
 import com.borrowbuddy.repository.ItemRepository;
 import com.borrowbuddy.service.BorrowService;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +42,18 @@ public class ItemController {
         return "items";
     }
 
+    @GetMapping("/lend")
+    public String lendForm(HttpSession session, Model model) {
+        User user = currentUser.get(session);
+        if (user == null) return "redirect:/";
+        if (user.isAdmin()) return "redirect:/admin";
+        model.addAttribute("user", user);
+        model.addAttribute("categories", CATEGORIES);
+        model.addAttribute("myItems", items.findAll(Sort.by("id")).stream()
+                .filter(i -> i.isOwnedBy(user)).toList());
+        return "lend";
+    }
+
     @PostMapping("/items/add")
     public String add(@RequestParam String name, @RequestParam String type,
                       @RequestParam(required = false) String model,
@@ -64,7 +77,7 @@ public class ItemController {
         } catch (IllegalArgumentException e) {
             flash.addFlashAttribute("message", e.getMessage());
         }
-        return "redirect:/items";
+        return "redirect:/lend";
     }
 
     @PostMapping("/items/request")

@@ -9,4 +9,5 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=build /app/target/borrowbuddy-1.0.0.jar app.jar
 EXPOSE 8080
+# Keep Spring Boot inside Render's free 512 MB memory limit
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-XX:+UseSerialGC", "-Xss512k", "-jar", "app.jar"]

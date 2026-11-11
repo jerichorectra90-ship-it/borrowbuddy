@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Lend an item')}"></head>
+<body>
+<header th:replace="~{fragments :: header(${user}, 'lend')}"></header>
+<main>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <div class="cols">
+        <div class="card">
+            <h1>Lend an item</h1>
+            <p class="muted small">You will be the owner. Classmates can request it once it is listed.</p>
+            <form method="post" th:action="@{/items/add}" class="stack" style="margin-top:16px">
+                <label class="field">Item name
+                    <input type="text" name="name" placeholder="e.g. Scientific Calculator" required>
+                </label>
+                <label class="field">Category
+                    <select name="type" id="type" required>
+                        <option th:each="c : ${categories}" th:value="${c}" th:text="${c}"></option>
+                    </select>
+                </label>
+                <label class="field" id="modelField">Model <span class="hint">Calculators only</span>
+                    <input type="text" name="model" placeholder="e.g. Casio fx-991ES Plus">
+                </label>
+                <label class="field">Description
+                    <textarea name="description" rows="3" maxlength="500"
+                              placeholder="Condition, inclusions, where to pick up"></textarea>
+                </label>
+                <button type="submit" class="accent">List item</button>
+            </form>
+        </div>
+
+        <div>
+            <div class="card">
+                <h3>Borrow periods by category</h3>
+                <table>
+                    <tr><td>🧮 Calculator</td><td>up to 3 days</td></tr>
+                    <tr><td>🔧 Lab Tool</td><td>up to 2 days</td></tr>
+                    <tr><td>🔌 Charger</td><td>up to 1 day</td></tr>
+                </table>
+            </div>
+
+            <h3 class="section-title">Your listed items</h3>
+            <div class="card" th:each="item : ${myItems}">
+                <div class="row between">
+                    <div>
+                        <strong th:text="${item.name}">Item</strong>
+                        <div class="faint small" th:text="${item.category}"></div>
+                    </div>
+                    <span class="badge" th:classappend="${'b-' + #strings.toLowerCase(item.status)}"
+                          th:text="${item.status}">Available</span>
+                </div>
+            </div>
+            <div class="card empty" th:if="${#lists.isEmpty(myItems)}">
+                <p>You have not listed anything yet.</p>
+            </div>
+        </div>
+    </div>
+</main>
+<script>
+    (function () {
+        var t = document.getElementById('type'), m = document.getElementById('modelField');
+        function sync() { m.style.display = t.value === 'Calculator' ? '' : 'none'; }
+        t.addEventListener('change', sync); sync();
+    })();
+</script>
+</body>
+</html>

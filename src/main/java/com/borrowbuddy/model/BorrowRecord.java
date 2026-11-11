@@ -115,6 +115,10 @@ public class BorrowRecord {
         return isActive() && today().isAfter(dueDate);
     }
 
+    public long getDaysOverdue() {
+        return isOverdue() ? java.time.temporal.ChronoUnit.DAYS.between(dueDate, today()) : 0;
+    }
+
     public boolean isReturnedLate() {
         return isReturned() && returnDate.isAfter(dueDate);
     }

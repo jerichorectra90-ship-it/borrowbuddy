@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Items · BorrowBuddy</title>
-    <link rel="stylesheet" th:href="@{/style.css}">
-</head>
+<head th:replace="~{fragments :: head('Items')}"></head>
 <body>
-<header th:replace="~{fragments :: header(${user})}"></header>
+<header th:replace="~{fragments :: header(${user}, 'items')}"></header>
 <main>
-    <div class="msg" th:if="${message}" th:text="${message}"></div>
+    <div th:replace="~{fragments :: flash}"></div>
 
-    <h2>Browse items</h2>
-    <form method="get" th:action="@{/items}" class="card row">
-        <input type="text" name="keyword" th:value="${keyword}" placeholder="Search name or description" class="grow">
+    <div class="page-head">
+        <div>
+            <h1 th:text="${user.admin} ? 'All listed items' : 'Browse items'">Browse items</h1>
+            <p th:unless="${user.admin}">Request an Available item. The owner approves it and sets the due date.</p>
+            <p th:if="${user.admin}">Every item listed by students and org officers, with its current status.</p>
+        </div>
+        <a class="btn accent" th:href="@{/lend}" th:unless="${user.admin}">+ Lend an item</a>
+    </div>
+
+    <form method="get" th:action="@{/items}" class="searchbar">
+        <input type="text" name="keyword" th:value="${keyword}" placeholder="Search by name or description">
         <select name="category">
             <option value="">All categories</option>
             <option th:each="c : ${categories}" th:value="${c}" th:text="${c}" th:selected="${c == category}"></option>
@@ -21,44 +24,43 @@
         <button type="submit">Search</button>
     </form>
 
-    <div class="card" th:each="item : ${items}">
-        <div class="row top">
-            <div class="grow">
-                <strong th:text="${item.name}">Item</strong>
-                <span class="badge" th:classappend="${'b-' + #strings.toLowerCase(item.status)}"
-                      th:text="${item.status}">Available</span>
-                <div class="muted" th:text="${item.category + ' · up to ' + item.maxBorrowDays + ' day(s)'}"></div>
-                <p th:if="${!#strings.isEmpty(item.description)}" th:text="${item.description}"></p>
-                <div class="muted small"
-                     th:text="${'Owner: ' + item.owner.fullName + ' (' + item.owner.profile.contactInfo + ')'}"></div>
+    <div class="grid">
+        <div class="card item" th:each="item : ${items}">
+            <div class="item-top">
+                <span class="icon" th:classappend="${#strings.replace(#strings.toLowerCase(item.category), ' ', '-')}"
+                      th:text="${item.category == 'Calculator'} ? '🧮' : (${item.category == 'Charger'} ? '🔌' : '🔧')">🔧</span>
+                <div class="grow">
+                    <div class="row between">
+                        <h3 th:text="${item.name}">Item</h3>
+                        <span class="badge" th:classappend="${'b-' + #strings.toLowerCase(item.status)}"
+                              th:text="${item.status}">Available</span>
+                    </div>
+                    <div class="faint small" th:text="${item.category + ' · up to ' + item.maxBorrowDays + ' day(s)'}"></div>
+                </div>
             </div>
-            <div>
-                <span class="muted" th:if="${item.isOwnedBy(user)}">Your item</span>
+            <p class="desc" th:if="${!#strings.isEmpty(item.description)}" th:text="${item.description}"></p>
+            <div class="owner">
+                Owner: <strong th:text="${item.owner.fullName}">Name</strong>
+                · <span th:text="${item.owner.profile.contactInfo}">contact</span>
+            </div>
+            <div class="actions">
+                <span class="mine" th:if="${item.isOwnedBy(user)}">This is your item</span>
                 <form method="post" th:action="@{/items/request}" class="row"
                       th:if="${!item.isOwnedBy(user) and !user.admin and item.available}">
                     <input type="hidden" name="itemId" th:value="${item.id}">
                     <input type="number" name="days" min="1" th:max="${item.maxBorrowDays}"
-                           th:placeholder="${item.maxBorrowDays + ' days'}" class="days">
-                    <button type="submit">Request</button>
+                           th:value="${item.maxBorrowDays}" title="Days">
+                    <span class="faint small">day(s)</span>
+                    <button type="submit" class="sm">Request</button>
                 </form>
-                <span class="muted" th:if="${!item.isOwnedBy(user) and !user.admin and !item.available}">Not available</span>
+                <span class="faint small" th:if="${!item.isOwnedBy(user) and !user.admin and !item.available}">Not available right now</span>
             </div>
         </div>
     </div>
-    <p class="muted" th:if="${#lists.isEmpty(items)}">No items match your search.</p>
 
-    <div class="card" th:unless="${user.admin}">
-        <h3>Lend an item</h3>
-        <form method="post" th:action="@{/items/add}" class="stack">
-            <input type="text" name="name" placeholder="Item name" required>
-            <select name="type" required>
-                <option th:each="c : ${categories}" th:value="${c}" th:text="${c}"></option>
-            </select>
-            <input type="text" name="model" placeholder="Model (calculators only, e.g. Casio fx-991ES)">
-            <textarea name="description" rows="2" maxlength="500"
-                      placeholder="Description (condition, inclusions, where to pick up)"></textarea>
-            <button type="submit">List item</button>
-        </form>
+    <div class="card empty" th:if="${#lists.isEmpty(items)}">
+        <div class="big">🔍</div>
+        <p>No items match your search.</p>
     </div>
 </main>
 </body>

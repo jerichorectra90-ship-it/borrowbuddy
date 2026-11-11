@@ -1,16 +1,49 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title + ' · BorrowBuddy'}">BorrowBuddy</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
 <body>
-<header th:fragment="header(user)">
-    <strong class="brand">BorrowBuddy</strong>
-    <nav>
-        <a th:href="@{/items}">Items</a>
-        <a th:href="@{/requests}" th:unless="${user.admin}">Requests</a>
-        <a th:href="@{/records}" th:text="${user.admin} ? 'All records (admin)' : 'My records'">Records</a>
-        <a th:href="@{/profile}">Profile</a>
-        <a th:href="@{/logout}">Log out</a>
-    </nav>
-    <span class="who" th:text="${user.fullName + ' · ' + user.role}">Name</span>
+
+<!-- Top navigation. "active" highlights the current page. -->
+<header th:fragment="header(user, active)" class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" th:href="@{/}"><span class="logo">B</span>BorrowBuddy</a>
+
+        <nav class="nav" th:if="${user.admin}">
+            <a th:href="@{/admin}" th:classappend="${active == 'admin'} ? 'on'">Dashboard</a>
+            <a th:href="@{/items}" th:classappend="${active == 'items'} ? 'on'">All items</a>
+            <a th:href="@{/records}" th:classappend="${active == 'records'} ? 'on'">All records</a>
+            <a th:href="@{/profile}" th:classappend="${active == 'profile'} ? 'on'">Profile</a>
+        </nav>
+
+        <nav class="nav" th:unless="${user.admin}">
+            <a th:href="@{/items}" th:classappend="${active == 'items'} ? 'on'">Browse</a>
+            <a th:href="@{/lend}" th:classappend="${active == 'lend'} ? 'on'">Lend an item</a>
+            <a th:href="@{/requests}" th:classappend="${active == 'requests'} ? 'on'">Requests
+                <span class="count" th:if="${navPending != null and navPending > 0}" th:text="${navPending}">1</span></a>
+            <a th:href="@{/records}" th:classappend="${active == 'records'} ? 'on'">My records</a>
+            <a th:href="@{/profile}" th:classappend="${active == 'profile'} ? 'on'">Profile</a>
+        </nav>
+
+        <div class="me">
+            <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(user.fullName, 0, 1))}">J</span>
+            <span class="who"><span th:text="${user.fullName}">Name</span><small th:text="${user.role}">Role</small></span>
+            <a class="logout" th:href="@{/logout}">Log out</a>
+        </div>
+    </div>
 </header>
+
+<!-- Flash message shown after an action -->
+<div th:fragment="flash" class="alert info" th:if="${message}" th:text="${message}"></div>
+
+<!-- Role chip -->
+<span th:fragment="role(u)" class="chip"
+      th:classappend="${u.admin} ? 'admin' : (${#strings.startsWith(u.role, 'Org')} ? 'officer' : 'student')"
+      th:text="${u.role}">Student</span>
+
 </body>
 </html>

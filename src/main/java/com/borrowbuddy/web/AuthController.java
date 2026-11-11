@@ -26,7 +26,9 @@ public class AuthController {
 
     @GetMapping("/")
     public String home(HttpSession session) {
-        return currentUser.get(session) != null ? "redirect:/items" : "login";
+        User user = currentUser.get(session);
+        if (user == null) return "login";
+        return user.isAdmin() ? "redirect:/admin" : "redirect:/items";
     }
 
     @PostMapping("/login")
@@ -41,7 +43,7 @@ public class AuthController {
             return "login";
         }
         currentUser.login(session, found.get());
-        return "redirect:/items";
+        return found.get().isAdmin() ? "redirect:/admin" : "redirect:/items";
     }
 
     @GetMapping("/register")
