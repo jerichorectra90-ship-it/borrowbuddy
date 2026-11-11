@@ -28,11 +28,7 @@ Out of scope (scope note): payments, delivery, item deposits.
 | Overloading (same name, different parameters) | `BorrowService.searchItem(keyword)` / `searchItem(keyword, category)`; `requestBorrow(item, user)` / `requestBorrow(item, user, days)`; `BorrowRecord.approve()` / `approve(date)`; `markReturned()` / `markReturned(date)`. |
 | Composition (HAS-A) | `User` has a `Profile`. `Item` has an owner `User`. `BorrowRecord` has an `Item`, a borrower, and a lender. |
 
-## Demo accounts (password: borrow123)
-- Student: jericho.rectra@ust-legazpi.edu.ph (or student ID 2024-00123)
-- Student: maria.santos@ust-legazpi.edu.ph
-- Org officer: paolo.reyes@ust-legazpi.edu.ph
-- Lab staff (admin): delacruz@ust-legazpi.edu.ph
+## Live demo
+https://borrowbuddy-rxdv.onrender.com
 
-Demo data includes one returned record, one overdue record, and two pending requests.
-Suggested live demo: log in as Jericho, approve Maria's soldering kit request, then show My records. Log in as Engr. Dela Cruz to show the Admin dashboard.
+Demo data (sample students, an org officer, a lab staff admin, items and borrow records) is added automatically on first start.

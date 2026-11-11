@@ -29,25 +29,8 @@
                 <button type="submit" class="block">Log in</button>
             </form>
             <p class="small" style="margin-top:14px">No account yet? <a th:href="@{/register}">Create one with your UST-L email</a></p>
-
-            <div class="divider">Demo accounts · password borrow123</div>
-            <div class="demo">
-                <button type="button" data-acc="jericho.rectra@ust-legazpi.edu.ph"><span>Jericho Rectra</span><span class="chip student">Student</span></button>
-                <button type="button" data-acc="maria.santos@ust-legazpi.edu.ph"><span>Maria Santos</span><span class="chip student">Student</span></button>
-                <button type="button" data-acc="paolo.reyes@ust-legazpi.edu.ph"><span>Paolo Reyes</span><span class="chip officer">Org officer</span></button>
-                <button type="button" data-acc="delacruz@ust-legazpi.edu.ph"><span>Engr. Dela Cruz</span><span class="chip admin">Lab staff · Admin</span></button>
-            </div>
         </div>
     </section>
 </div>
-<script>
-    document.querySelectorAll('.demo button').forEach(function (b) {
-        b.addEventListener('click', function () {
-            document.getElementById('account').value = b.dataset.acc;
-            document.getElementById('password').value = 'borrow123';
-            b.closest('.card').querySelector('form').submit();
-        });
-    });
-</script>
 </body>
 </html>
