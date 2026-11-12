@@ -1,7 +1,9 @@
 package com.borrowbuddy.web;
 
+import com.borrowbuddy.model.BorrowRecord;
 import com.borrowbuddy.model.User;
 import com.borrowbuddy.service.BorrowService;
+import com.borrowbuddy.service.OverdueNotifier;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,10 +19,12 @@ public class RecordController {
     private static final List<String> FILTERS = List.of("all", "active", "overdue", "returned");
 
     private final BorrowService service;
+    private final OverdueNotifier notifier;
     private final CurrentUser currentUser;
 
-    public RecordController(BorrowService service, CurrentUser currentUser) {
+    public RecordController(BorrowService service, OverdueNotifier notifier, CurrentUser currentUser) {
         this.service = service;
+        this.notifier = notifier;
         this.currentUser = currentUser;
     }
 
@@ -70,6 +74,21 @@ public class RecordController {
         User user = currentUser.get(session);
         if (user == null) return "redirect:/";
         flash.addFlashAttribute("message", service.markReturned(recordId, user));
+        return "redirect:/records";
+    }
+
+    // Lender: the item was not returned by the due date. Escalate to lab staff by email.
+    @PostMapping("/records/not-received")
+    public String notReceived(@RequestParam Long recordId, HttpSession session, RedirectAttributes flash) {
+        User user = currentUser.get(session);
+        if (user == null) return "redirect:/";
+        StringBuilder message = new StringBuilder();
+        BorrowRecord reported = service.reportNotReceived(recordId, user, message);
+        if (reported != null) {
+            notifier.alertAdminsOfReport(reported);
+            message.append(" Lab staff were notified.");
+        }
+        flash.addFlashAttribute("message", message.toString());
         return "redirect:/records";
     }
 }

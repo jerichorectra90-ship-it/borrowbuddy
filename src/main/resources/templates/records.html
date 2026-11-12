@@ -9,8 +9,8 @@
     <div class="page-head">
         <div>
             <h1 th:text="${user.admin} ? 'All lending records' : 'My lending records'">Records</h1>
-            <p th:unless="${user.admin}">Items you borrowed and items you lent. Only the owner can mark an item returned.</p>
-            <p th:if="${user.admin}">Every approved borrow in the system. Overdue items are flagged for follow-up.</p>
+            <p th:unless="${user.admin}">Items you borrowed and items you lent. Only the owner confirms whether the item was received. If it is not returned after the due date, the owner reports it and lab staff take over.</p>
+            <p th:if="${user.admin}">Every approved borrow in the system. Manage overdue borrowers from the <a th:href="@{/admin}">Dashboard</a>.</p>
         </div>
     </div>
 
@@ -34,6 +34,8 @@
                           th:text="${r.statusLabel}"></span>
                     <span class="chip" th:unless="${user.admin}"
                           th:text="${r.isLentBy(user)} ? 'You lent this' : 'You borrowed this'"></span>
+                    <span class="chip admin" th:if="${r.reportedUnreturned and r.active}">Reported to lab staff</span>
+                    <span class="chip" th:if="${r.resolvedByAdmin}">Resolved by lab staff</span>
                 </div>
                 <div class="people">
                     <b>Borrower</b><span th:text="${r.borrower.fullName + ' · ' + r.borrower.profile.contactInfo}">b</span>
@@ -45,10 +47,17 @@
                     <div th:if="${r.returnDate != null}"><small>Returned</small><span th:text="${r.returnDate}">date</span></div>
                 </div>
             </div>
-            <form method="post" th:action="@{/records/return}" th:if="${r.active and r.isLentBy(user)}">
-                <input type="hidden" name="recordId" th:value="${r.id}">
-                <button type="submit" class="ok">Mark returned</button>
-            </form>
+            <div class="row" th:if="${r.active and r.isLentBy(user)}">
+                <form method="post" th:action="@{/records/return}">
+                    <input type="hidden" name="recordId" th:value="${r.id}">
+                    <button type="submit" class="ok">Received</button>
+                </form>
+                <form method="post" th:action="@{/records/not-received}" th:if="${r.overdue and !r.reportedUnreturned}"
+                      onsubmit="return confirm('Report to lab staff that this item was not returned?');">
+                    <input type="hidden" name="recordId" th:value="${r.id}">
+                    <button type="submit" class="danger">Not received</button>
+                </form>
+            </div>
         </div>
     </div>
     <div class="card empty" th:if="${#lists.isEmpty(records)}"><p>No records here.</p></div>

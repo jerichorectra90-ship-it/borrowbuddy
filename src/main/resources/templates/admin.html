@@ -4,40 +4,73 @@
 <body>
 <header th:replace="~{fragments :: header(${user}, 'admin')}"></header>
 <main>
+    <div th:replace="~{fragments :: flash}"></div>
+
     <div class="page-head">
         <div>
             <h1>Admin dashboard</h1>
-            <p>Lab staff overview: who is borrowing, what is out, and what is overdue.</p>
+            <p>Lab staff overview. Only lab staff manage borrowers who did not return items on their due date.</p>
         </div>
-        <a class="btn ghost" th:href="@{/records(filter='overdue')}">Open overdue records</a>
+        <form method="post" th:action="@{/admin/run-check}">
+            <button type="submit" class="ghost">✉ Run overdue check now</button>
+        </form>
+    </div>
+
+    <div class="alert bad" th:unless="${emailReady}">
+        <span><strong>Email is not set up yet.</strong> Overdue notifications are logged below but not sent.
+        Add BREVO_API_KEY and MAIL_FROM in Render to turn them on.</span>
+    </div>
+    <div class="alert info" th:if="${emailReady}">
+        <span>Email notifications are on. Every day at 8:00 AM, overdue borrowers get a reminder and lab staff get a summary.
+            <th:block th:if="${!#strings.isEmpty(emailRedirect)}"> Demo mode: all emails go to <strong th:text="${emailRedirect}"></strong>.</th:block></span>
     </div>
 
     <div class="stats">
-        <div class="card stat"><div class="num" th:text="${userCount}">0</div><div class="lbl">Students &amp; officers</div><div class="sub">registered accounts</div></div>
+        <div class="card stat"><div class="num" th:text="${userCount}">0</div><div class="lbl">Students &amp; officers</div>
+            <div class="sub" th:text="${suspendedCount + ' suspended'}"></div></div>
         <div class="card stat"><div class="num" th:text="${itemCount}">0</div><div class="lbl">Listed items</div>
             <div class="sub" th:text="${available + ' available · ' + reserved + ' reserved'}"></div></div>
         <div class="card stat warn"><div class="num" th:text="${borrowed}">0</div><div class="lbl">Currently borrowed</div><div class="sub">approved and not yet returned</div></div>
         <div class="card stat"><div class="num" th:text="${#lists.size(pending)}">0</div><div class="lbl">Pending requests</div><div class="sub">waiting for the owner</div></div>
-        <div class="card stat bad"><div class="num" th:text="${#lists.size(overdue)}">0</div><div class="lbl">Overdue</div><div class="sub">past the due date</div></div>
+        <div class="card stat bad"><div class="num" th:text="${#lists.size(overdue)}">0</div><div class="lbl">Not returned on time</div><div class="sub">past the due date</div></div>
         <div class="card stat ok"><div class="num" th:text="${returnedCount}">0</div><div class="lbl">Returned</div><div class="sub">completed borrows</div></div>
     </div>
 
-    <h2 class="section-title">Overdue items <span class="chip" th:text="${#lists.size(overdue)}">0</span></h2>
-    <div class="card table-wrap" th:unless="${#lists.isEmpty(overdue)}">
-        <table>
-            <thead><tr><th>Item</th><th>Borrower</th><th>Owner</th><th>Due</th><th>Days late</th></tr></thead>
-            <tbody>
-            <tr class="overdue-row" th:each="r : ${overdue}">
-                <td><strong th:text="${r.item.name}">Item</strong></td>
-                <td><span th:text="${r.borrower.fullName}">b</span><br><span class="faint small" th:text="${r.borrower.profile.contactInfo}"></span></td>
-                <td><span th:text="${r.lender.fullName}">o</span><br><span class="faint small" th:text="${r.lender.profile.contactInfo}"></span></td>
-                <td th:text="${r.dueDate}">date</td>
-                <td><span class="badge b-overdue" th:text="${r.daysOverdue}">1</span></td>
-            </tr>
-            </tbody>
-        </table>
+    <h2 class="section-title">Borrowers who did not return on time <span class="chip" th:text="${#lists.size(overdue)}">0</span></h2>
+    <div class="card is-overdue" th:each="r : ${overdue}">
+        <div class="rec">
+            <div class="grow">
+                <div class="row">
+                    <strong th:text="${r.item.name}">Item</strong>
+                    <span class="badge b-overdue" th:text="${r.daysOverdue + ' day(s) late'}">1 day late</span>
+                    <span class="chip admin" th:if="${r.reportedUnreturned}" th:text="${'Lender reported not received · ' + r.reportedDate}">Reported</span>
+                    <span class="chip" th:if="${r.borrower.suspended}">Borrower suspended</span>
+                </div>
+                <div class="people">
+                    <b>Borrower</b><span th:text="${r.borrower.fullName + ' · ' + r.borrower.ustlAccount + ' · ' + r.borrower.profile.contactInfo}">b</span>
+                    <b>Owner</b><span th:text="${r.lender.fullName + ' · ' + r.lender.profile.contactInfo}">o</span>
+                    <b>Due</b><span th:text="${r.dueDate}">date</span>
+                    <b>Last email</b><span th:text="${r.lastReminderDate != null} ? ${r.lastReminderDate} : 'Not yet reminded'">—</span>
+                </div>
+            </div>
+            <div class="row">
+                <form method="post" th:action="@{/admin/remind}">
+                    <input type="hidden" name="recordId" th:value="${r.id}">
+                    <button type="submit" class="sm">✉ Email reminder</button>
+                </form>
+                <form method="post" th:action="@{/admin/suspend}" th:unless="${r.borrower.suspended}">
+                    <input type="hidden" name="userId" th:value="${r.borrower.id}">
+                    <button type="submit" class="sm danger">Suspend borrower</button>
+                </form>
+                <form method="post" th:action="@{/admin/resolve}"
+                      onsubmit="return confirm('Mark this item as returned and close the case?');">
+                    <input type="hidden" name="recordId" th:value="${r.id}">
+                    <button type="submit" class="sm ok">Resolve: item returned</button>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="card empty" th:if="${#lists.isEmpty(overdue)}"><p>Nothing is overdue. 🎉</p></div>
+    <div class="card empty" th:if="${#lists.isEmpty(overdue)}"><p>Every borrowed item is within its due date. 🎉</p></div>
 
     <h2 class="section-title">Pending requests</h2>
     <div class="card table-wrap" th:unless="${#lists.isEmpty(pending)}">
@@ -54,24 +87,58 @@
             </tbody>
         </table>
     </div>
+    <p class="faint small" th:unless="${#lists.isEmpty(pending)}">Only the item owner can approve or decline a request.</p>
     <div class="card empty" th:if="${#lists.isEmpty(pending)}"><p>No pending requests.</p></div>
 
     <h2 class="section-title">Users</h2>
     <div class="card table-wrap">
         <table>
-            <thead><tr><th>Name</th><th>Role</th><th>UST-L account</th><th>Course</th><th>Listed</th><th>Borrowing</th></tr></thead>
+            <thead><tr><th>Name</th><th>Role</th><th>UST-L account</th><th>Listed</th><th>Borrowing</th><th>Overdue</th><th>Status</th></tr></thead>
             <tbody>
-            <tr th:each="u : ${users}">
+            <tr th:each="u : ${users}" th:classappend="${overduePerUser[u.id] != null} ? 'overdue-row'">
                 <td><strong th:text="${u.fullName}">Name</strong><br><span class="faint small" th:text="${u.studentId}"></span></td>
                 <td><span th:replace="~{fragments :: role(${u})}"></span></td>
                 <td th:text="${u.ustlAccount}">email</td>
-                <td th:text="${u.admin} ? ${u.profile.course} : ${u.profile}">course</td>
                 <td th:text="${u.admin} ? '—' : ${listedPerUser[u.id] ?: 0}">0</td>
                 <td th:text="${u.admin} ? '—' : ${openPerUser[u.id] + ' / ' + u.borrowLimit}">0</td>
+                <td th:text="${u.admin} ? '—' : ${overduePerUser[u.id] ?: 0}">0</td>
+                <td>
+                    <span th:if="${u.admin}" class="faint">—</span>
+                    <th:block th:unless="${u.admin}">
+                        <form method="post" th:action="@{/admin/reinstate}" th:if="${u.suspended}" class="row">
+                            <span class="badge b-overdue">Suspended</span>
+                            <input type="hidden" name="userId" th:value="${u.id}">
+                            <button type="submit" class="sm ghost">Reinstate</button>
+                        </form>
+                        <form method="post" th:action="@{/admin/suspend}" th:unless="${u.suspended}" class="row">
+                            <span class="badge b-available">Active</span>
+                            <input type="hidden" name="userId" th:value="${u.id}">
+                            <button type="submit" class="sm ghost">Suspend</button>
+                        </form>
+                    </th:block>
+                </td>
             </tr>
             </tbody>
         </table>
     </div>
+
+    <h2 class="section-title">Email notifications</h2>
+    <div class="card table-wrap" th:unless="${#lists.isEmpty(notifications)}">
+        <table>
+            <thead><tr><th>When</th><th>To</th><th>Subject</th><th>Status</th></tr></thead>
+            <tbody>
+            <tr th:each="n : ${notifications}">
+                <td class="small" th:text="${#temporals.format(n.sentAt, 'MMM d, h:mm a')}">time</td>
+                <td class="small" th:text="${n.recipient}">to</td>
+                <td class="small"><span th:text="${n.subject}">subject</span>
+                    <br th:if="${n.detail}"><span class="faint" th:if="${n.detail}" th:text="${n.detail}"></span></td>
+                <td><span class="badge" th:classappend="${n.sent} ? 'b-available' : (${n.status == 'Failed'} ? 'b-overdue' : 'b-declined')"
+                          th:text="${n.status}">Sent</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card empty" th:if="${#lists.isEmpty(notifications)}"><p>No emails yet. Click "Run overdue check now" to send the first ones.</p></div>
 </main>
 </body>
 </html>

@@ -38,6 +38,12 @@ public class BorrowRecord {
     private LocalDate dueDate;
     private LocalDate returnDate;
 
+    // Unreturned-item tracking (all nullable so the columns can be added to an existing table)
+    private Boolean reportedUnreturned;   // lender clicked "Not received" after the due date
+    private LocalDate reportedDate;
+    private LocalDate lastReminderDate;   // last overdue email sent to the borrower
+    private Boolean resolvedByAdmin;      // lab staff closed an unreturned case
+
     protected BorrowRecord() {}
 
     // A new record is a borrow REQUEST. The item becomes Reserved until the owner responds.
@@ -89,6 +95,28 @@ public class BorrowRecord {
         item.setStatus(Item.AVAILABLE);
     }
 
+    // Lender: the due date passed and the item did not come back. Escalates the case to lab staff.
+    public void reportNotReceived() {
+        if (!isOverdue()) {
+            throw new IllegalStateException("You can report an item as not received only after its due date.");
+        }
+        reportedUnreturned = true;
+        reportedDate = today();
+    }
+
+    // Lab staff: close an unreturned case once the item is back.
+    public void resolveByAdmin() {
+        if (!isOverdue()) {
+            throw new IllegalStateException("Only overdue records can be resolved by lab staff.");
+        }
+        markReturned(today());
+        resolvedByAdmin = true;
+    }
+
+    public void recordReminderSent() {
+        lastReminderDate = today();
+    }
+
     private void requireStatus(String expected) {
         if (!expected.equals(status)) {
             throw new IllegalStateException("This record is " + status + ", not " + expected + ".");
@@ -118,6 +146,11 @@ public class BorrowRecord {
     public long getDaysOverdue() {
         return isOverdue() ? java.time.temporal.ChronoUnit.DAYS.between(dueDate, today()) : 0;
     }
+
+    public boolean isReportedUnreturned() { return Boolean.TRUE.equals(reportedUnreturned); }
+    public boolean isResolvedByAdmin() { return Boolean.TRUE.equals(resolvedByAdmin); }
+    public LocalDate getReportedDate() { return reportedDate; }
+    public LocalDate getLastReminderDate() { return lastReminderDate; }
 
     public boolean isReturnedLate() {
         return isReturned() && returnDate.isAfter(dueDate);

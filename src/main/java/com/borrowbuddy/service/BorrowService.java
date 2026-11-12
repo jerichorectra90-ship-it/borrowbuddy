@@ -52,6 +52,9 @@ public class BorrowService {
         if (borrower.isAdmin()) {
             return "Lab staff accounts monitor records and do not borrow items.";
         }
+        if (borrower.isSuspended()) {
+            return "Your borrowing is suspended by lab staff because of an unreturned item. Please contact the lab office.";
+        }
         if (item.isOwnedBy(borrower)) {
             return "You cannot borrow your own item.";
         }
@@ -104,11 +107,12 @@ public class BorrowService {
         return "Declined. " + r.getItem().getName() + " is Available again.";
     }
 
+    // Lender: "Received" - the borrower gave the item back.
     @Transactional
     public String markReturned(Long recordId, User owner) {
         BorrowRecord r = records.findById(recordId).orElse(null);
         if (r == null || !r.isLentBy(owner)) {
-            return "Only the item owner can mark it returned.";
+            return "Only the item owner can confirm the item was received.";
         }
         if (!r.isActive()) {
             return "This item is not currently borrowed.";
@@ -117,7 +121,56 @@ public class BorrowService {
         r.markReturned(); // return date saved, item becomes Available
         items.save(r.getItem());
         records.save(r);
-        return r.getItem().getName() + " marked returned" + (wasOverdue ? " (late)." : ".");
+        return r.getItem().getName() + " received back" + (wasOverdue ? " (late)." : ".");
+    }
+
+    // Lender: "Not received" - the due date passed and the item was not returned. Returns the record
+    // so the controller can alert lab staff, or null with the reason in the message holder.
+    @Transactional
+    public BorrowRecord reportNotReceived(Long recordId, User owner, StringBuilder message) {
+        BorrowRecord r = records.findById(recordId).orElse(null);
+        if (r == null || !r.isLentBy(owner)) {
+            message.append("Only the item owner can report an item as not received.");
+            return null;
+        }
+        if (r.isReportedUnreturned()) {
+            message.append("You already reported this item. Lab staff are handling it.");
+            return null;
+        }
+        try {
+            r.reportNotReceived();
+        } catch (IllegalStateException e) {
+            message.append(e.getMessage());
+            return null;
+        }
+        records.save(r);
+        message.append("Reported to lab staff: ").append(r.getBorrower().getFullName())
+               .append(" has not returned ").append(r.getItem().getName()).append(".");
+        return r;
+    }
+
+    // Lab staff: the unreturned item is back, close the case.
+    @Transactional
+    public String resolveUnreturned(Long recordId, User admin) {
+        if (admin == null || !admin.isAdmin()) {
+            return "Only lab staff can resolve unreturned items.";
+        }
+        BorrowRecord r = records.findById(recordId).orElse(null);
+        if (r == null) {
+            return "Record not found.";
+        }
+        try {
+            r.resolveByAdmin();
+        } catch (IllegalStateException e) {
+            return e.getMessage();
+        }
+        items.save(r.getItem());
+        records.save(r);
+        return "Resolved: " + r.getItem().getName() + " is marked returned and Available again.";
+    }
+
+    public BorrowRecord findRecord(Long recordId) {
+        return records.findById(recordId).orElse(null);
     }
 
     public long countOpenBorrows(User borrower) {

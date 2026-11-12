@@ -116,6 +116,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .btn.accent, button.accent { background: var(--accent); color: var(--brand); }
 .btn.ghost, button.ghost { background: #fff; color: var(--ink); border-color: #cdd3e0; }
 .btn.ok, button.ok { background: var(--ok); }
+.btn.danger, button.danger { background: var(--bad); }
+.btn.ghost.sm, button.ghost.sm { padding: 5px 10px; }
 .btn.sm, button.sm { padding: 7px 12px; font-size: 13px; border-radius: 8px; }
 .btn.block, button.block { width: 100%; }
 

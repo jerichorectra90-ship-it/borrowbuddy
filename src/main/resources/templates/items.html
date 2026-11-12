@@ -5,6 +5,10 @@
 <header th:replace="~{fragments :: header(${user}, 'items')}"></header>
 <main>
     <div th:replace="~{fragments :: flash}"></div>
+    <div class="alert bad" th:if="${user.suspended}">
+        <span><strong>Your borrowing is suspended</strong> by lab staff because of an unreturned item.
+        Return it to the owner and contact the lab office to be reinstated.</span>
+    </div>
 
     <div class="page-head">
         <div>

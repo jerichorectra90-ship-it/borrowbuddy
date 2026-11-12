@@ -29,6 +29,10 @@ public abstract class User {
     @Embedded
     private Profile profile; // COMPOSITION
 
+    // Set by lab staff when a borrower does not return an item. Nullable so the column can be
+    // added to an existing table; null means not suspended.
+    private Boolean suspended;
+
     protected User() {}
 
     protected User(String fullName, String ustlAccount, String studentId, String password, Profile profile) {
@@ -80,6 +84,28 @@ public abstract class User {
 
     public boolean isSameUser(User other) {
         return other != null && id != null && id.equals(other.getId());
+    }
+
+    public boolean isSuspended() { return Boolean.TRUE.equals(suspended); }
+
+    // ENCAPSULATION: only these two methods change the suspension, and only lab staff may call them.
+    public void suspend(User byAdmin) {
+        requireAdmin(byAdmin);
+        if (isAdmin()) {
+            throw new IllegalArgumentException("Lab staff accounts cannot be suspended.");
+        }
+        this.suspended = true;
+    }
+
+    public void reinstate(User byAdmin) {
+        requireAdmin(byAdmin);
+        this.suspended = false;
+    }
+
+    private static void requireAdmin(User user) {
+        if (user == null || !user.isAdmin()) {
+            throw new IllegalArgumentException("Only lab staff can change a borrower's suspension.");
+        }
     }
 
     // Lab staff override this to become the admin role.
