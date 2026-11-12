@@ -31,8 +31,9 @@
     <div class="grid">
         <div class="card item" th:each="item : ${items}">
             <div class="item-top">
-                <span class="icon" th:classappend="${#strings.replace(#strings.toLowerCase(item.category), ' ', '-')}"
-                      th:text="${item.category == 'Calculator'} ? '🧮' : (${item.category == 'Charger'} ? '🔌' : '🔧')">🔧</span>
+                <span class="icon"
+                      th:classappend="${#strings.startsWith(item.category, 'Calculator')} ? 'calculator' : (${#strings.startsWith(item.category, 'Charger')} ? 'charger' : 'lab-tool')"
+                      th:text="${#strings.startsWith(item.category, 'Calculator')} ? '🧮' : (${#strings.startsWith(item.category, 'Charger')} ? '🔌' : '🔧')">🔧</span>
                 <div class="grow">
                     <div class="row between">
                         <h3 th:text="${item.name}">Item</h3>

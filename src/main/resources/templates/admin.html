@@ -79,10 +79,10 @@
             <tbody>
             <tr th:each="r : ${pending}">
                 <td><strong th:text="${r.item.name}">Item</strong></td>
-                <td th:text="${r.borrower.fullName}">b</td>
-                <td th:text="${r.lender.fullName}">o</td>
-                <td th:text="${r.requestedDays}">2</td>
-                <td th:text="${r.requestDate}">date</td>
+                <td data-label="Requested by" th:text="${r.borrower.fullName}">b</td>
+                <td data-label="Owner" th:text="${r.lender.fullName}">o</td>
+                <td data-label="Days" th:text="${r.requestedDays}">2</td>
+                <td data-label="Requested" th:text="${r.requestDate}">date</td>
             </tr>
             </tbody>
         </table>
@@ -97,12 +97,12 @@
             <tbody>
             <tr th:each="u : ${users}" th:classappend="${overduePerUser[u.id] != null} ? 'overdue-row'">
                 <td><strong th:text="${u.fullName}">Name</strong><br><span class="faint small" th:text="${u.studentId}"></span></td>
-                <td><span th:replace="~{fragments :: role(${u})}"></span></td>
-                <td th:text="${u.ustlAccount}">email</td>
-                <td th:text="${u.admin} ? '—' : ${listedPerUser[u.id] ?: 0}">0</td>
-                <td th:text="${u.admin} ? '—' : ${openPerUser[u.id] + ' / ' + u.borrowLimit}">0</td>
-                <td th:text="${u.admin} ? '—' : ${overduePerUser[u.id] ?: 0}">0</td>
-                <td>
+                <td data-label="Role"><span th:replace="~{fragments :: role(${u})}"></span></td>
+                <td data-label="Account" th:text="${u.ustlAccount}">email</td>
+                <td data-label="Listed" th:text="${u.admin} ? '—' : ${listedPerUser[u.id] ?: 0}">0</td>
+                <td data-label="Borrowing" th:text="${u.admin} ? '—' : ${openPerUser[u.id] + ' / ' + u.borrowLimit}">0</td>
+                <td data-label="Overdue" th:text="${u.admin} ? '—' : ${overduePerUser[u.id] ?: 0}">0</td>
+                <td data-label="Status">
                     <span th:if="${u.admin}" class="faint">—</span>
                     <th:block th:unless="${u.admin}">
                         <form method="post" th:action="@{/admin/reinstate}" th:if="${u.suspended}" class="row">
@@ -129,10 +129,10 @@
             <tbody>
             <tr th:each="n : ${notifications}">
                 <td class="small" th:text="${#temporals.format(n.sentAt, 'MMM d, h:mm a')}">time</td>
-                <td class="small" th:text="${n.recipient}">to</td>
-                <td class="small"><span th:text="${n.subject}">subject</span>
+                <td class="small" data-label="To" th:text="${n.recipient}">to</td>
+                <td class="small" data-label="Subject"><span th:text="${n.subject}">subject</span>
                     <br th:if="${n.detail}"><span class="faint" th:if="${n.detail}" th:text="${n.detail}"></span></td>
-                <td><span class="badge" th:classappend="${n.sent} ? 'b-available' : (${n.status == 'Failed'} ? 'b-overdue' : 'b-declined')"
+                <td data-label="Status"><span class="badge" th:classappend="${n.sent} ? 'b-available' : (${n.status == 'Failed'} ? 'b-overdue' : 'b-declined')"
                           th:text="${n.status}">Sent</span></td>
             </tr>
             </tbody>
