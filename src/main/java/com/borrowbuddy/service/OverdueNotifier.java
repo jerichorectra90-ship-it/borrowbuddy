@@ -72,7 +72,7 @@ public class OverdueNotifier {
         }
         return sendBorrowerReminder(r)
                 ? "Reminder emailed to " + r.getBorrower().getFullName() + "."
-                : "The reminder could not be sent. See Email notifications below.";
+                : "The reminder could not be sent. See the Email log tab.";
     }
 
     // Lender clicked "Not received": alert lab staff right away.

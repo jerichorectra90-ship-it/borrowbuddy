@@ -169,6 +169,26 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .tabs a:hover { text-decoration: none; color: var(--ink); }
 .tabs a.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
 
+/* ---------- Admin dashboard tabs (all visible: 4 across, 2 x 2 on phones) ---------- */
+.admin-tabs {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+    background: #e8ebf2; padding: 5px; border-radius: 14px; margin: 22px 0 14px;
+}
+.admin-tabs a {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 8px; border-radius: 10px; color: var(--ink-2); font-weight: 600; font-size: 14px; text-align: center;
+}
+.admin-tabs a:hover { text-decoration: none; color: var(--ink); background: rgba(255,255,255,.55); }
+.admin-tabs a.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.admin-tabs b {
+    min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; font-size: 12px;
+    display: inline-grid; place-items: center; background: var(--muted-soft); color: var(--ink-2);
+}
+.admin-tabs a.on b { background: var(--brand-soft); color: var(--brand-2); }
+.admin-tabs a.bad b { background: var(--bad-soft); color: var(--bad); }
+.admin-tabs a.bad.on { color: var(--bad); }
+.tab-panel[hidden] { display: none; }
+
 /* ---------- Records / requests ---------- */
 .rec { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .rec .people { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 13px; color: var(--ink-2); margin-top: 6px; }
@@ -179,7 +199,8 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .card.is-overdue { border-left: 4px solid var(--bad); }
 
 /* ---------- Stats ---------- */
-.stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); margin-bottom: 8px; }
+.stats { display: grid; gap: 12px; grid-template-columns: repeat(3, 1fr); margin-bottom: 8px; }
+@media (min-width: 1000px) { .stats { grid-template-columns: repeat(6, 1fr); } }
 .stat { padding: 14px 16px; }
 .stat .num { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
 .stat .lbl { font-size: 13px; color: var(--ink-2); font-weight: 600; }
@@ -303,6 +324,8 @@ tr.overdue-row td { background: #fff7f7; }
     .tabs a { flex: 1 0 auto; text-align: center; }
 
     .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .admin-tabs { grid-template-columns: 1fr 1fr; margin-top: 16px; }
+    .admin-tabs a { padding: 11px 6px; font-size: 13px; }
     .stat { padding: 12px; }
     .stat .num { font-size: 24px; }
 

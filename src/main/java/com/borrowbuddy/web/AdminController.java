@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 // email reminders, suspending / reinstating borrowing, and resolving unreturned cases.
 @Controller
 public class AdminController {
+    private static final List<String> TABS = List.of("unreturned", "pending", "users", "emails");
+
     private final UserRepository users;
     private final ItemRepository items;
     private final BorrowRecordRepository records;
@@ -94,7 +96,7 @@ public class AdminController {
         if (admin == null || !admin.isAdmin()) return "redirect:/";
         BorrowRecord r = service.findRecord(recordId);
         flash.addFlashAttribute("message", r == null ? "Record not found." : notifier.remindBorrower(r));
-        return "redirect:/admin";
+        return "redirect:/admin#unreturned";
     }
 
     @PostMapping("/admin/resolve")
@@ -102,17 +104,19 @@ public class AdminController {
         User admin = currentUser.get(session);
         if (admin == null || !admin.isAdmin()) return "redirect:/";
         flash.addFlashAttribute("message", service.resolveUnreturned(recordId, admin));
-        return "redirect:/admin";
+        return "redirect:/admin#unreturned";
     }
 
     @PostMapping("/admin/suspend")
-    public String suspend(@RequestParam Long userId, HttpSession session, RedirectAttributes flash) {
-        return changeSuspension(userId, true, session, flash);
+    public String suspend(@RequestParam Long userId, @RequestParam(defaultValue = "users") String tab,
+                          HttpSession session, RedirectAttributes flash) {
+        return changeSuspension(userId, true, tab, session, flash);
     }
 
     @PostMapping("/admin/reinstate")
-    public String reinstate(@RequestParam Long userId, HttpSession session, RedirectAttributes flash) {
-        return changeSuspension(userId, false, session, flash);
+    public String reinstate(@RequestParam Long userId, @RequestParam(defaultValue = "users") String tab,
+                            HttpSession session, RedirectAttributes flash) {
+        return changeSuspension(userId, false, tab, session, flash);
     }
 
     @PostMapping("/admin/run-check")
@@ -120,16 +124,17 @@ public class AdminController {
         User admin = currentUser.get(session);
         if (admin == null || !admin.isAdmin()) return "redirect:/";
         flash.addFlashAttribute("message", notifier.runDailyCheck());
-        return "redirect:/admin";
+        return "redirect:/admin#emails";
     }
 
-    private String changeSuspension(Long userId, boolean suspend, HttpSession session, RedirectAttributes flash) {
+    private String changeSuspension(Long userId, boolean suspend, String tab, HttpSession session, RedirectAttributes flash) {
+        String back = "redirect:/admin#" + (TABS.contains(tab) ? tab : "users");
         User admin = currentUser.get(session);
         if (admin == null || !admin.isAdmin()) return "redirect:/";
         User target = users.findById(userId).orElse(null);
         if (target == null) {
             flash.addFlashAttribute("message", "User not found.");
-            return "redirect:/admin";
+            return back;
         }
         try {
             if (suspend) target.suspend(admin); else target.reinstate(admin);
@@ -140,6 +145,6 @@ public class AdminController {
         } catch (IllegalArgumentException e) {
             flash.addFlashAttribute("message", e.getMessage());
         }
-        return "redirect:/admin";
+        return back;
     }
 }
