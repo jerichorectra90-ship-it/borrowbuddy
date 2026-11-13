@@ -169,24 +169,43 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .tabs a:hover { text-decoration: none; color: var(--ink); }
 .tabs a.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
 
-/* ---------- Admin dashboard tabs (all visible: 4 across, 2 x 2 on phones) ---------- */
-.admin-tabs {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
-    background: #e8ebf2; padding: 5px; border-radius: 14px; margin: 22px 0 14px;
-}
+/* ---------- Admin dashboard tabs: colored tab cards (4 across, 2 x 2 on phones) ---------- */
+.admin-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 26px 0 16px; }
 .admin-tabs a {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 10px 8px; border-radius: 10px; color: var(--ink-2); font-weight: 600; font-size: 14px; text-align: center;
+    --c: var(--brand-2); --soft: var(--brand-soft);
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 14px 16px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+    color: var(--ink); text-decoration: none;
+    transition: border-color .15s, box-shadow .15s, transform .15s, background .15s;
 }
-.admin-tabs a:hover { text-decoration: none; color: var(--ink); background: rgba(255,255,255,.55); }
-.admin-tabs a.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-.admin-tabs b {
-    min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; font-size: 12px;
-    display: inline-grid; place-items: center; background: var(--muted-soft); color: var(--ink-2);
+.admin-tabs a.t-bad   { --c: var(--bad);   --soft: var(--bad-soft); }
+.admin-tabs a.t-info  { --c: var(--info);  --soft: var(--info-soft); }
+.admin-tabs a.t-brand { --c: var(--brand-2); --soft: var(--brand-soft); }
+.admin-tabs a.t-ok    { --c: var(--ok);    --soft: var(--ok-soft); }
+.admin-tabs a::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
+    background: var(--c); transform: scaleX(0); transform-origin: left; transition: transform .2s;
 }
-.admin-tabs a.on b { background: var(--brand-soft); color: var(--brand-2); }
-.admin-tabs a.bad b { background: var(--bad-soft); color: var(--bad); }
-.admin-tabs a.bad.on { color: var(--bad); }
+.admin-tabs a:hover { text-decoration: none; transform: translateY(-1px); border-color: var(--c); }
+.admin-tabs a.on { border-color: var(--c); background: linear-gradient(180deg, #fff 0%, var(--soft) 160%); box-shadow: 0 6px 18px rgba(23,32,51,.10); }
+.admin-tabs a.on::after { transform: scaleX(1); }
+.t-icon {
+    flex: none; width: 40px; height: 40px; border-radius: 12px;
+    display: grid; place-items: center; background: var(--soft); color: var(--c);
+}
+.t-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.admin-tabs a.on .t-icon { background: var(--c); color: #fff; }
+.t-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.t-text strong { font-size: 14px; }
+.t-text small { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-count {
+    margin-left: auto; flex: none; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px;
+    display: grid; place-items: center; font-size: 14px; font-weight: 800;
+    background: var(--muted-soft); color: var(--ink-2);
+}
+.admin-tabs a.on .t-count, .admin-tabs a.t-bad .t-count { background: var(--soft); color: var(--c); }
 .tab-panel[hidden] { display: none; }
 
 /* ---------- Records / requests ---------- */
@@ -324,8 +343,12 @@ tr.overdue-row td { background: #fff7f7; }
     .tabs a { flex: 1 0 auto; text-align: center; }
 
     .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .admin-tabs { grid-template-columns: 1fr 1fr; margin-top: 16px; }
-    .admin-tabs a { padding: 11px 6px; font-size: 13px; }
+    .admin-tabs { grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+    .admin-tabs a { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 12px 14px; }
+    .t-icon { width: 36px; height: 36px; }
+    .t-count { position: absolute; top: 12px; right: 12px; }
+    .t-text strong { font-size: 13px; }
+    .t-text small { font-size: 11px; white-space: normal; }
     .stat { padding: 12px; }
     .stat .num { font-size: 24px; }
 
