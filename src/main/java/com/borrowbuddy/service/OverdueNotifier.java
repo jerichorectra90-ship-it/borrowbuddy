@@ -16,11 +16,11 @@ import java.util.Set;
 
 import static com.borrowbuddy.service.EmailService.esc;
 
-// Email notifications for items that were not returned on their due date.
-//  - Every morning (8:00 AM Manila time) it emails each overdue borrower a reminder
-//    (at most every 2 days per record) and emails lab staff a summary of all overdue borrowers.
-//  - Lab staff are emailed right away when a lender reports an item as "Not received".
-//  - Lab staff can also send a reminder or run the check manually from the admin dashboard.
+// emails for items that weren't returned by the due date
+//  - every morning (8:00 AM Manila time) each overdue borrower gets a reminder email
+//    (max once every 2 days per record), and lab staff gets a summary of everyone overdue
+//  - lab staff gets emailed right away when a lender reports "Not received"
+//  - lab staff can also send a reminder or run the check by hand from the admin dashboard
 @Service
 public class OverdueNotifier {
     private static final int REMINDER_EVERY_DAYS = 2;
@@ -43,7 +43,7 @@ public class OverdueNotifier {
         runDailyCheck();
     }
 
-    // Returns a short summary for the admin dashboard.
+    // gives back a short summary to show on the admin dashboard
     @Transactional
     public String runDailyCheck() {
         List<BorrowRecord> overdue = records.findAll(Sort.by("dueDate")).stream()
@@ -64,7 +64,7 @@ public class OverdueNotifier {
                 + " borrower reminder(s) sent, summary sent to " + admins + " lab staff address(es).";
     }
 
-    // Lab staff clicked "Email reminder" on one record.
+    // lab staff hit "Email reminder" on a record
     @Transactional
     public String remindBorrower(BorrowRecord r) {
         if (!r.isOverdue()) {
@@ -75,7 +75,7 @@ public class OverdueNotifier {
                 : "The reminder could not be sent. See the Email log tab.";
     }
 
-    // Lender clicked "Not received": alert lab staff right away.
+    // lender hit "Not received" so tell lab staff asap
     public void alertAdminsOfReport(BorrowRecord r) {
         String html = "<p>A lender reported that a borrowed item was <b>not returned</b>.</p>"
                 + recordTable(List.of(r))

@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-// Adds the number of requests waiting for the logged-in owner, shown as a badge in the top navigation.
+// adds the count of requests waiting on the logged-in owner, it's the badge up in the nav
 @ControllerAdvice
 public class NavModel {
     private final BorrowService service;

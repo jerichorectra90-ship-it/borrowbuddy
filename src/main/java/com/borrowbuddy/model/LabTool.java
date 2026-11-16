@@ -3,7 +3,8 @@ package com.borrowbuddy.model;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
-// INHERITANCE: LabTool IS-A Item. OVERRIDING: 2-day limit.
+// INHERITANCE - LabTool IS-A Item. OVERRIDING - 2 days max
+
 @Entity
 @DiscriminatorValue("LABTOOL")
 public class LabTool extends Item {

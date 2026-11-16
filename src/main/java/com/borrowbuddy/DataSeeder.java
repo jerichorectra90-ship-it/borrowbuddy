@@ -6,8 +6,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-// Fills the database with demo data the first time the app starts (only if there are no users yet).
-// All demo accounts use the password: borrow123
+// puts some demo data in the db on first run, skips it if there are users already
+// pw for every demo account is borrow123
 @Component
 public class DataSeeder implements CommandLineRunner {
     private static final String DEMO_PASSWORD = "borrow123";
@@ -27,7 +27,7 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         if (users.count() > 0) return;
 
-        // POLYMORPHISM: different User children saved through the same User repository
+        // POLYMORPHISM - diff kinds of User but they all get saved thru the same User repo
         User jericho = users.save(new Student("Jericho Rectra", "jericho.rectra@ust-legazpi.edu.ph",
                 "2024-00123", DEMO_PASSWORD, new Profile("BSIT", 2, "2G", "Messenger: Jericho Rectra")));
         User maria = users.save(new Student("Maria Santos", "maria.santos@ust-legazpi.edu.ph",
@@ -50,21 +50,21 @@ public class DataSeeder implements CommandLineRunner {
                 "Includes stand and solder wire.", jericho));
         items.save(new Charger("Phone Charger (Type-C)", "Fast charger with 1 m cable.", maria));
 
-        // Returned on time: Jericho borrowed Maria's calculator last week
+        // returned on time - Jericho borrowed Maria's calcu last week
         BorrowRecord returned = new BorrowRecord(casio, jericho, 3);
         returned.approve(BorrowRecord.today().minusDays(7));
         returned.markReturned(BorrowRecord.today().minusDays(5));
         records.save(returned);
 
-        // Overdue: Maria borrowed the org's laptop charger for 1 day, 4 days ago
+        // overdue one - Maria took the org's laptop charger for 1 day, that was 4 days ago
         BorrowRecord overdue = new BorrowRecord(laptopCharger, maria, 1);
         overdue.approve(BorrowRecord.today().minusDays(4));
         records.save(overdue);
 
-        // Pending: Maria asks for Jericho's soldering kit (approve this live in the demo)
+        // pending - Maria wants Jericho's soldering kit (gonna approve this one live in the demo)
         records.save(new BorrowRecord(solderKit, maria, 2));
 
-        // Pending: Jericho asks Paolo for the TI-84
+        // pending too - Jericho asking Paolo for the TI-84
         records.save(new BorrowRecord(ti84, jericho, 3));
     }
 }

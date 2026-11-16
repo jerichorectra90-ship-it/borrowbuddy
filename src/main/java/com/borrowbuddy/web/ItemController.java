@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
 
-// Features 2-4: item listing, availability + category search, borrow requests
+// Features 2-4 - listing items, search by availability + category, borrow requests
 @Controller
 public class ItemController {
     private static final List<String> CATEGORIES = List.of("Calculator", "Lab Tool", "Charger");
@@ -91,8 +91,8 @@ public class ItemController {
             return "redirect:/items";
         }
         String result = (days == null)
-                ? service.requestBorrow(item, user)         // overloaded: default days
-                : service.requestBorrow(item, user, days);  // overloaded: custom days
+                ? service.requestBorrow(item, user)         // overloaded, default days
+                : service.requestBorrow(item, user, days);  // overloaded, custom days
         flash.addFlashAttribute("message", result);
         return "redirect:/items";
     }

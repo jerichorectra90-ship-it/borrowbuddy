@@ -3,8 +3,8 @@ package com.borrowbuddy.model;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
-// INHERITANCE: OrgOfficer IS-A User who lends shared organization equipment.
-// OVERRIDING: higher borrow limit and a role that names the organization.
+// INHERITANCE - OrgOfficer IS-A User, they lend out the org's shared equipment
+// OVERRIDING - bigger borrow limit + the role shows which org
 @Entity
 @DiscriminatorValue("OFFICER")
 public class OrgOfficer extends User {

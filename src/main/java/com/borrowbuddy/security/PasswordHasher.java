@@ -6,7 +6,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-// Hashes passwords with PBKDF2 (built into Java), so plain passwords are never stored.
+// hashes the passwords w/ PBKDF2 (already in Java so no extra lib), we never save the plain pw
 public final class PasswordHasher {
     private static final int ITERATIONS = 65536;
     private static final int KEY_LENGTH = 256;

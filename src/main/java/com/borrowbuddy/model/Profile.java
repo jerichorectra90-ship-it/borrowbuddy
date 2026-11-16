@@ -2,8 +2,8 @@ package com.borrowbuddy.model;
 
 import jakarta.persistence.Embeddable;
 
-// COMPOSITION: a User HAS-A Profile (course, year level, block, contact info).
-// ENCAPSULATION: private fields that can only change through validated setters.
+// COMPOSITION - a User HAS-A Profile (course, year level, block, contact info)
+// ENCAPSULATION - fields are private, you can only change them thru the setters that check the input
 @Embeddable
 public class Profile {
     private String course;

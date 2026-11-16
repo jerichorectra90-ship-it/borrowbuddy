@@ -29,7 +29,7 @@
         <div class="card stat ok"><div class="num" th:text="${returnedCount}">0</div><div class="lbl">Returned</div></div>
     </div>
 
-    <!-- Tabs: every tab is always visible (4 across on desktop, 2 x 2 on phones) -->
+    <!-- tabs, all always visible (4 in a row on desktop, 2 x 2 on phones) -->
     <nav class="admin-tabs" role="tablist">
         <a href="#unreturned" data-tab="unreturned" class="t-bad" role="tab">
             <span class="t-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
@@ -53,7 +53,7 @@
         </a>
     </nav>
 
-    <!-- Tab 1: borrowers who did not return on time -->
+    <!-- tab 1: borrowers who didn't return on time -->
     <section class="tab-panel" id="tab-unreturned">
         <div class="card is-overdue" th:each="r : ${overdue}">
             <div class="rec">
@@ -92,7 +92,7 @@
         <div class="card empty" th:if="${#lists.isEmpty(overdue)}"><p>Every borrowed item is within its due date. 🎉</p></div>
     </section>
 
-    <!-- Tab 2: pending requests (read-only; only owners approve or decline) -->
+    <!-- tab 2: pending requests (view only, owners are the ones who approve/decline) -->
     <section class="tab-panel" id="tab-pending">
         <div class="card table-wrap" th:unless="${#lists.isEmpty(pending)}">
             <table>
@@ -111,7 +111,7 @@
         <div class="card empty" th:if="${#lists.isEmpty(pending)}"><p>No pending requests.</p></div>
     </section>
 
-    <!-- Tab 3: users, with suspend / reinstate -->
+    <!-- tab 3: users + suspend / reinstate -->
     <section class="tab-panel" id="tab-users">
         <div class="card table-wrap">
             <table>
@@ -147,7 +147,7 @@
         </div>
     </section>
 
-    <!-- Tab 4: email log -->
+    <!-- tab 4: email log -->
     <section class="tab-panel" id="tab-emails">
         <p class="faint small" th:if="${emailReady and !#strings.isEmpty(emailRedirect)}"
            th:text="${'Demo mode: all emails go to ' + emailRedirect}"></p>

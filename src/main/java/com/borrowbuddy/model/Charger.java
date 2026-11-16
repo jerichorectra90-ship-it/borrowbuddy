@@ -3,7 +3,7 @@ package com.borrowbuddy.model;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
-// INHERITANCE: Charger IS-A Item. OVERRIDING: 1-day limit, since chargers are needed back fast.
+// INHERITANCE - Charger IS-A Item. OVERRIDING - 1 day only bc people need their chargers back asap
 @Entity
 @DiscriminatorValue("CHARGER")
 public class Charger extends Item {

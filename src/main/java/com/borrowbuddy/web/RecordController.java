@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
 
-// Feature 4: owner approval. Features 5-6: lending records, returns, overdue tracking.
+// Feature 4 - owner approval. Features 5-6 - lending records, returns, overdue tracking
 @Controller
 public class RecordController {
     private static final List<String> FILTERS = List.of("all", "active", "overdue", "returned");
@@ -77,7 +77,7 @@ public class RecordController {
         return "redirect:/records";
     }
 
-    // Lender: the item was not returned by the due date. Escalate to lab staff by email.
+    // lender says the item wasn't returned by the due date, so email lab staff about it
     @PostMapping("/records/not-received")
     public String notReceived(@RequestParam Long recordId, HttpSession session, RedirectAttributes flash) {
         User user = currentUser.get(session);

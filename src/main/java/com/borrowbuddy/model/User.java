@@ -3,8 +3,8 @@ package com.borrowbuddy.model;
 import com.borrowbuddy.security.PasswordHasher;
 import jakarta.persistence.*;
 
-// INHERITANCE (parent of Student, OrgOfficer, LabStaff).
-// ENCAPSULATION: private fields; the password has no getter and is only stored as a hash.
+// INHERITANCE - parent class of Student, OrgOfficer, LabStaff
+// ENCAPSULATION - private fields. no getter for the password on purpose, we only keep the hash
 @Entity
 @Table(name = "app_users")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -27,10 +27,10 @@ public abstract class User {
     private String passwordHash;
 
     @Embedded
-    private Profile profile; // COMPOSITION
+    private Profile profile; // COMPOSITION, User HAS-A Profile
 
-    // Set by lab staff when a borrower does not return an item. Nullable so the column can be
-    // added to an existing table; null means not suspended.
+    // lab staff sets this when someone doesn't return an item. nullable so the column can be
+    // added to the existing table, null just means not suspended
     private Boolean suspended;
 
     protected User() {}
@@ -88,7 +88,7 @@ public abstract class User {
 
     public boolean isSuspended() { return Boolean.TRUE.equals(suspended); }
 
-    // ENCAPSULATION: only these two methods change the suspension, and only lab staff may call them.
+    // ENCAPSULATION - suspension only changes thru these 2 methods, and only lab staff can call them
     public void suspend(User byAdmin) {
         requireAdmin(byAdmin);
         if (isAdmin()) {
@@ -108,10 +108,10 @@ public abstract class User {
         }
     }
 
-    // Lab staff override this to become the admin role.
+    // LabStaff overrides this, that's how it becomes the admin
     public boolean isAdmin() { return false; }
 
-    // OVERRIDDEN by each child class
+    // child classes OVERRIDE these
     public abstract int getBorrowLimit();
 
     public abstract String getRole();

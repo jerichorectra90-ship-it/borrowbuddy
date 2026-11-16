@@ -5,8 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// Uptime check used by UptimeRobot. It runs a tiny database query so the free
-// Render server stays awake AND the free Supabase database never pauses for inactivity.
+// uptime check, UptimeRobot pings this. it does a tiny db query so the free
+// Render server stays awake AND the free Supabase db doesn't pause from being idle
 @RestController
 public class HealthController {
     private final UserRepository users;

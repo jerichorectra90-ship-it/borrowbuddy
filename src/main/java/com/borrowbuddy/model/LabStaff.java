@@ -3,8 +3,8 @@ package com.borrowbuddy.model;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
-// INHERITANCE: LabStaff IS-A User. Acts as the optional admin who monitors all records
-// and overdue items, so it does not borrow or lend.
+// INHERITANCE - LabStaff IS-A User. basically the admin, just watches all the records
+// and overdue stuff, so no borrowing or lending for them
 @Entity
 @DiscriminatorValue("STAFF")
 public class LabStaff extends User {

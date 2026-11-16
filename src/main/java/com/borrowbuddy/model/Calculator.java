@@ -3,7 +3,7 @@ package com.borrowbuddy.model;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
-// INHERITANCE: Calculator IS-A Item. OVERRIDING: 3-day limit and a category that shows the model.
+// INHERITANCE - Calculator IS-A Item. OVERRIDING - 3 days max, and the category shows the model too
 @Entity
 @DiscriminatorValue("CALCULATOR")
 public class Calculator extends Item {

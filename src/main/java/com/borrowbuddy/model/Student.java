@@ -3,7 +3,7 @@ package com.borrowbuddy.model;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
-// INHERITANCE: Student IS-A User. OVERRIDING: its own borrow limit and role.
+// INHERITANCE - Student IS-A User. OVERRIDING - has its own borrow limit and role
 @Entity
 @DiscriminatorValue("STUDENT")
 public class Student extends User {

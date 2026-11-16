@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-// Feature 1: UST-L login (email or student ID) and student profile
+// Feature 1 - UST-L login (email or student ID) + the student profile
 @Controller
 public class AuthController {
     private final UserRepository users;

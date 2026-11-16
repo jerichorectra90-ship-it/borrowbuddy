@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<!-- Top navigation. "active" highlights the current page. -->
+<!-- top nav. "active" = which page to highlight -->
 <header th:fragment="header(user, active)" class="topbar">
     <div class="topbar-inner">
         <a class="brand" th:href="@{/}"><span class="logo">B</span>BorrowBuddy</a>
@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    <!-- Phone only: app-style bottom tab bar so every page is one tap away -->
+    <!-- phones only: bottom tab bar like an app so every page is 1 tap away -->
     <nav class="tabbar" th:if="${user.admin}" aria-label="Main">
         <a th:href="@{/admin}" th:classappend="${active == 'admin'} ? 'on'">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
@@ -73,10 +73,10 @@
     </nav>
 </header>
 
-<!-- Flash message shown after an action -->
+<!-- flash msg that pops up after you do something -->
 <div th:fragment="flash" class="alert info" th:if="${message}" th:text="${message}"></div>
 
-<!-- Role chip -->
+<!-- role chip -->
 <span th:fragment="role(u)" class="chip"
       th:classappend="${u.admin} ? 'admin' : (${#strings.startsWith(u.role, 'Org')} ? 'officer' : 'student')"
       th:text="${u.role}">Student</span>

@@ -5,7 +5,7 @@ import com.borrowbuddy.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Component;
 
-// Keeps track of who is logged in for this browser session.
+// remembers who's logged in for this browser session
 @Component
 public class CurrentUser {
     private static final String KEY = "userId";

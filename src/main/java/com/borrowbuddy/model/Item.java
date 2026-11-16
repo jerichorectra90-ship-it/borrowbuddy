@@ -2,9 +2,9 @@ package com.borrowbuddy.model;
 
 import jakarta.persistence.*;
 
-// INHERITANCE (parent of Calculator, LabTool, Charger).
-// ENCAPSULATION: status can only be changed by BorrowRecord (package-private setter),
-// so an item's availability always matches its borrow records.
+// INHERITANCE - parent class of Calculator, LabTool, Charger
+// ENCAPSULATION - only BorrowRecord can change the status (the setter is package-private),
+// that way the availability never goes out of sync w/ the borrow records
 @Entity
 @Table(name = "items")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -26,7 +26,7 @@ public abstract class Item {
     private String status;
 
     @ManyToOne(optional = false)
-    private User owner; // COMPOSITION: an Item HAS-A owner
+    private User owner; // COMPOSITION - Item HAS-A owner
 
     protected Item() {}
 
@@ -72,7 +72,7 @@ public abstract class Item {
 
     public boolean isOwnedBy(User user) { return owner.isSameUser(user); }
 
-    // OVERRIDDEN by each child class
+    // child classes OVERRIDE this part
     public abstract int getMaxBorrowDays();
 
     public abstract String getCategory();

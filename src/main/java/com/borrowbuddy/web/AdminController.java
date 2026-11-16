@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-// Lab staff (admin) dashboard. Only users whose isAdmin() returns true (LabStaff, via OVERRIDING)
-// can open it. Lab staff are the only ones who manage borrowers who did not return items:
-// email reminders, suspending / reinstating borrowing, and resolving unreturned cases.
+// admin dashboard for lab staff. you only get in if isAdmin() is true (LabStaff, via OVERRIDING)
+// lab staff are the only ones who deal w/ borrowers that didn't return stuff:
+// email reminders, suspend / reinstate borrowing, and resolving the unreturned cases
 @Controller
 public class AdminController {
     private static final List<String> TABS = List.of("unreturned", "pending", "users", "emails");

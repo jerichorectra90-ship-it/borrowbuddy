@@ -3,7 +3,7 @@ package com.borrowbuddy.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-// A log entry for every email the system tries to send, shown on the admin dashboard.
+// log of every email the system tried to send, shows up on the admin dashboard
 @Entity
 @Table(name = "notifications")
 public class Notification {

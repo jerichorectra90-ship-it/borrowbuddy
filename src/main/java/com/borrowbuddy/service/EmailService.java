@@ -13,14 +13,14 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-// Sends email through the Brevo HTTP API. (Render's free plan blocks normal SMTP email ports,
-// so an HTTPS email API is used instead.) Every attempt is logged in the notifications table.
+// sends the emails thru Brevo's HTTP API. Render free plan blocks the normal SMTP ports
+// so we had to go w/ an HTTPS email API instead. every try gets logged in the notifications table
 //
-// Environment variables:
-//   BREVO_API_KEY    - API key from Brevo (SMTP & API > API keys)
-//   MAIL_FROM        - the sender address you verified in Brevo
-//   ADMIN_EMAIL      - where lab staff alerts go (defaults to the lab staff accounts' emails)
-//   MAIL_REDIRECT_TO - optional: send ALL emails to this inbox instead (for demos with sample accounts)
+// env vars it needs:
+//   BREVO_API_KEY    - api key from Brevo (SMTP & API > API keys)
+//   MAIL_FROM        - sender address, has to be verified in Brevo
+//   ADMIN_EMAIL      - where the lab staff alerts go (if empty it uses the lab staff accounts' emails)
+//   MAIL_REDIRECT_TO - optional, sends ALL emails to this one inbox (handy for demos w/ the sample accounts)
 @Service
 public class EmailService {
     private final NotificationRepository log;
@@ -55,7 +55,7 @@ public class EmailService {
 
     public String getRedirectTo() { return redirectTo; }
 
-    // Returns true if the email was accepted by Brevo.
+    // true = Brevo took the email
     public boolean send(String to, String toName, String subject, String html) {
         String actualTo = redirectTo.isEmpty() ? to : redirectTo;
         String actualSubject = redirectTo.isEmpty() ? subject : subject + " [for " + to + "]";
@@ -91,7 +91,7 @@ public class EmailService {
         }
     }
 
-    // Escapes user text before it goes into an HTML email.
+    // escape whatever the user typed before it goes in the html email
     public static String esc(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
