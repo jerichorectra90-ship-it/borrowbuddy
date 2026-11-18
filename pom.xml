@@ -18,6 +18,8 @@
 
     <properties>
         <java.version>17</java.version>
+        <!-- the website's main class (the terminal version has its own main, so name this one) -->
+        <start-class>com.borrowbuddy.BorrowBuddyApplication</start-class>
     </properties>
 
     <dependencies>
