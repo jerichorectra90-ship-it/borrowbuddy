@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
 
-// Feature 4 - owner approval. Features 5-6 - lending records, returns, overdue tracking
+// Feature 4 - owner approval + pickup meetup. Features 5-6 - lending records, handover, returns, overdue tracking
 @Controller
 public class RecordController {
-    private static final List<String> FILTERS = List.of("all", "active", "overdue", "returned");
+    private static final List<String> FILTERS = List.of("all", "pickup", "active", "overdue", "returned");
 
     private final BorrowService service;
     private final OverdueNotifier notifier;
@@ -39,11 +39,20 @@ public class RecordController {
         return "requests";
     }
 
+    // owner approves + sets the pickup meetup, then the borrower gets emailed the details
     @PostMapping("/requests/approve")
-    public String approve(@RequestParam Long recordId, HttpSession session, RedirectAttributes flash) {
+    public String approve(@RequestParam Long recordId,
+                          @RequestParam(defaultValue = "") String meetupPlace,
+                          @RequestParam(defaultValue = "") String meetupTime,
+                          HttpSession session, RedirectAttributes flash) {
         User user = currentUser.get(session);
         if (user == null) return "redirect:/";
-        flash.addFlashAttribute("message", service.approveRequest(recordId, user));
+        StringBuilder message = new StringBuilder();
+        BorrowRecord approved = service.approveRequest(recordId, user, meetupPlace, meetupTime, message);
+        if (approved != null) {
+            notifier.emailMeetupDetails(approved);
+        }
+        flash.addFlashAttribute("message", message.toString());
         return "redirect:/requests";
     }
 
@@ -69,6 +78,39 @@ public class RecordController {
         return "records";
     }
 
+    // owner: gave the item at the meetup
+    @PostMapping("/records/handover")
+    public String handOver(@RequestParam Long recordId, HttpSession session, RedirectAttributes flash) {
+        User user = currentUser.get(session);
+        if (user == null) return "redirect:/";
+        flash.addFlashAttribute("message", service.confirmHandOver(recordId, user));
+        return "redirect:/records";
+    }
+
+    // owner: borrower never picked it up
+    @PostMapping("/records/cancel")
+    public String cancelPickup(@RequestParam Long recordId, HttpSession session, RedirectAttributes flash) {
+        User user = currentUser.get(session);
+        if (user == null) return "redirect:/";
+        flash.addFlashAttribute("message", service.cancelPickup(recordId, user));
+        return "redirect:/records";
+    }
+
+    // borrower: "I returned it", then the owner gets emailed to confirm
+    @PostMapping("/records/claim-return")
+    public String claimReturn(@RequestParam Long recordId, HttpSession session, RedirectAttributes flash) {
+        User user = currentUser.get(session);
+        if (user == null) return "redirect:/";
+        StringBuilder message = new StringBuilder();
+        BorrowRecord claimed = service.claimReturned(recordId, user, message);
+        if (claimed != null) {
+            notifier.emailReturnClaim(claimed);
+        }
+        flash.addFlashAttribute("message", message.toString());
+        return "redirect:/records";
+    }
+
+    // owner: "Received"
     @PostMapping("/records/return")
     public String markReturned(@RequestParam Long recordId, HttpSession session, RedirectAttributes flash) {
         User user = currentUser.get(session);

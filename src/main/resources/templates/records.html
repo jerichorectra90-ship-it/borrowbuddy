@@ -9,7 +9,7 @@
     <div class="page-head">
         <div>
             <h1 th:text="${user.admin} ? 'All lending records' : 'My lending records'">Records</h1>
-            <p th:unless="${user.admin}">Items you borrowed and items you lent. Only the owner confirms whether the item was received. If it is not returned after the due date, the owner reports it and lab staff take over.</p>
+            <p th:unless="${user.admin}">Items you borrowed and items you lent. Meet at the pickup place, then the owner clicks Handed over and the due date starts. To give it back, the borrower clicks I returned it and the owner confirms Received or Not received. Items not returned after the due date go to lab staff.</p>
             <p th:if="${user.admin}">Every approved borrow in the system. Manage overdue borrowers from the <a th:href="@{/admin}">Dashboard</a>.</p>
         </div>
     </div>
@@ -34,30 +34,62 @@
                           th:text="${r.statusLabel}"></span>
                     <span class="chip" th:unless="${user.admin}"
                           th:text="${r.isLentBy(user)} ? 'You lent this' : 'You borrowed this'"></span>
+                    <span class="chip b-overdue" th:if="${r.returnPending and r.overdue}">Past due date</span>
                     <span class="chip admin" th:if="${r.reportedUnreturned and r.active}">Reported to lab staff</span>
                     <span class="chip" th:if="${r.resolvedByAdmin}">Resolved by lab staff</span>
                 </div>
                 <div class="people">
                     <b>Borrower</b><span th:text="${r.borrower.fullName + ' · ' + r.borrower.profile.contactInfo}">b</span>
                     <b>Owner</b><span th:text="${r.lender.fullName + ' · ' + r.lender.profile.contactInfo}">o</span>
+                    <th:block th:if="${r.meetupPlace != null}">
+                        <b>Pickup</b><span th:text="${r.meetupPlace + ' · ' + #temporals.format(r.meetupTime, 'MMM d, h:mm a')}">place · time</span>
+                    </th:block>
                 </div>
                 <div class="timeline">
-                    <div><small>Borrowed</small><span th:text="${r.borrowDate}">date</span></div>
-                    <div><small>Due</small><span th:text="${r.dueDate}" th:style="${r.overdue} ? 'color:var(--bad);font-weight:700'">date</span></div>
+                    <div th:if="${r.approved}"><small>Borrow period</small><span th:text="${r.requestedDays + ' day(s) from pickup'}">days</span></div>
+                    <div th:if="${r.borrowDate != null}"><small>Borrowed</small><span th:text="${r.borrowDate}">date</span></div>
+                    <div th:if="${r.dueDate != null}"><small>Due</small><span th:text="${r.dueDate}" th:style="${r.overdue} ? 'color:var(--bad);font-weight:700'">date</span></div>
+                    <div th:if="${r.returnPending}"><small>Borrower says returned</small><span th:text="${r.returnClaimedDate}">date</span></div>
                     <div th:if="${r.returnDate != null}"><small>Returned</small><span th:text="${r.returnDate}">date</span></div>
                 </div>
             </div>
+
+            <!-- owner, waiting for pickup: did the handover happen? -->
+            <div class="row" th:if="${r.approved and r.isLentBy(user)}">
+                <form method="post" th:action="@{/records/handover}"
+                      onsubmit="return confirm('Did the borrower get the item? The due date starts today.');">
+                    <input type="hidden" name="recordId" th:value="${r.id}">
+                    <button type="submit" class="ok">Handed over</button>
+                </form>
+                <form method="post" th:action="@{/records/cancel}"
+                      onsubmit="return confirm('Cancel this pickup? The item becomes Available again.');">
+                    <input type="hidden" name="recordId" th:value="${r.id}">
+                    <button type="submit" class="ghost">Cancel</button>
+                </form>
+            </div>
+
+            <!-- owner, item is out: did it come back? -->
             <div class="row" th:if="${r.active and r.isLentBy(user)}">
                 <form method="post" th:action="@{/records/return}">
                     <input type="hidden" name="recordId" th:value="${r.id}">
                     <button type="submit" class="ok">Received</button>
                 </form>
-                <form method="post" th:action="@{/records/not-received}" th:if="${r.overdue and !r.reportedUnreturned}"
-                      onsubmit="return confirm('Report to lab staff that this item was not returned?');">
+                <form method="post" th:action="@{/records/not-received}"
+                      th:if="${r.returnPending or (r.overdue and !r.reportedUnreturned)}"
+                      onsubmit="return confirm('You did not get the item back? If it is past the due date, lab staff will be told.');">
                     <input type="hidden" name="recordId" th:value="${r.id}">
                     <button type="submit" class="danger">Not received</button>
                 </form>
             </div>
+
+            <!-- borrower, item is out: say they gave it back -->
+            <form method="post" th:action="@{/records/claim-return}" th:if="${r.active and r.isBorrowedBy(user) and !r.returnPending}"
+                  onsubmit="return confirm('Did you give the item back to the owner?');">
+                <input type="hidden" name="recordId" th:value="${r.id}">
+                <button type="submit" class="ok">I returned it</button>
+            </form>
+            <span class="faint small" th:if="${r.returnPending and r.isBorrowedBy(user)}">Waiting for the owner to confirm</span>
+            <span class="faint small" th:if="${r.approved and r.isBorrowedBy(user)}">Meet the owner at the pickup place</span>
         </div>
     </div>
     <div class="card empty" th:if="${#lists.isEmpty(records)}"><p>No records here.</p></div>

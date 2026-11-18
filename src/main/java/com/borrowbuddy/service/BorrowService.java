@@ -6,10 +6,15 @@ import com.borrowbuddy.repository.ItemRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
 public class BorrowService {
+    public static final DateTimeFormatter MEETUP_FORMAT = DateTimeFormatter.ofPattern("MMM d, h:mm a");
+
     private final ItemRepository items;
     private final BorrowRecordRepository records;
 
@@ -76,20 +81,100 @@ public class BorrowService {
                 + ". " + item.getName() + " is Reserved until they respond.";
     }
 
+    // owner approves + sets the pickup meetup. gives back the record so the controller can email
+    // the borrower the meetup details, or null if it didn't work (reason goes in the message holder)
     @Transactional
-    public String approveRequest(Long recordId, User owner) {
+    public BorrowRecord approveRequest(Long recordId, User owner, String place, String timeText,
+                                       StringBuilder message) {
         BorrowRecord r = records.findById(recordId).orElse(null);
         if (r == null || !r.isLentBy(owner)) {
-            return "Only the item owner can approve this request.";
+            message.append("Only the item owner can approve this request.");
+            return null;
         }
         if (!r.isPending()) {
-            return "This request was already handled.";
+            message.append("This request was already handled.");
+            return null;
         }
-        r.approve(); // item is Borrowed now + due date gets set
+        LocalDateTime time;
+        try {
+            time = LocalDateTime.parse(timeText == null ? "" : timeText.trim());
+        } catch (DateTimeParseException e) {
+            message.append("Pick a pickup date and time.");
+            return null;
+        }
+        if (time.isBefore(LocalDateTime.now(BorrowRecord.ZONE).minusMinutes(5))) {
+            message.append("That pickup time already passed. Pick a time from now on.");
+            return null;
+        }
+        try {
+            r.approve(place, time); // Approved, item stays Reserved til the handover
+        } catch (IllegalArgumentException e) {
+            message.append(e.getMessage());
+            return null;
+        }
+        records.save(r);
+        message.append("Approved. Meet ").append(r.getBorrower().getFullName()).append(" at ")
+               .append(r.getMeetupPlace()).append(" on ").append(MEETUP_FORMAT.format(time))
+               .append(". Click \"Handed over\" in My records once they have it, that's when the ")
+               .append(r.getRequestedDays()).append("-day borrow starts.");
+        return r;
+    }
+
+    // owner gave the item at the meetup, due date starts today
+    @Transactional
+    public String confirmHandOver(Long recordId, User owner) {
+        BorrowRecord r = records.findById(recordId).orElse(null);
+        if (r == null || !r.isLentBy(owner)) {
+            return "Only the item owner can confirm the handover.";
+        }
+        if (!r.isApproved()) {
+            return "This item is not waiting for pickup.";
+        }
+        r.handOver(); // Borrowed now + due date gets set
         items.save(r.getItem());
         records.save(r);
-        return "Approved. " + r.getBorrower().getFullName() + " must return "
+        return "Handed over. " + r.getBorrower().getFullName() + " must return "
                 + r.getItem().getName() + " by " + r.getDueDate() + ".";
+    }
+
+    // borrower never showed up for the pickup
+    @Transactional
+    public String cancelPickup(Long recordId, User owner) {
+        BorrowRecord r = records.findById(recordId).orElse(null);
+        if (r == null || !r.isLentBy(owner)) {
+            return "Only the item owner can cancel the pickup.";
+        }
+        if (!r.isApproved()) {
+            return "This item is not waiting for pickup.";
+        }
+        r.cancelPickup(); // back to Available
+        items.save(r.getItem());
+        records.save(r);
+        return "Pickup cancelled. " + r.getItem().getName() + " is Available again.";
+    }
+
+    // borrower clicked "I returned it". gives back the record so the controller can email the owner
+    @Transactional
+    public BorrowRecord claimReturned(Long recordId, User borrower, StringBuilder message) {
+        BorrowRecord r = records.findById(recordId).orElse(null);
+        if (r == null || !r.isBorrowedBy(borrower)) {
+            message.append("Only the borrower can say they returned this item.");
+            return null;
+        }
+        if (!r.isActive()) {
+            message.append("This item is not currently borrowed.");
+            return null;
+        }
+        try {
+            r.claimReturned();
+        } catch (IllegalStateException e) {
+            message.append(e.getMessage());
+            return null;
+        }
+        records.save(r);
+        message.append("Got it. ").append(r.getLender().getFullName())
+               .append(" will confirm they received ").append(r.getItem().getName()).append(".");
+        return r;
     }
 
     @Transactional
@@ -133,16 +218,28 @@ public class BorrowService {
             message.append("Only the item owner can report an item as not received.");
             return null;
         }
+        if (!r.isActive()) {
+            message.append("This item is not currently borrowed.");
+            return null;
+        }
+        // borrower said "I returned it" but the owner says no, so cancel that claim first
+        boolean rejectedClaim = r.isReturnPending();
+        if (rejectedClaim) {
+            r.rejectReturnClaim();
+            records.save(r);
+        }
+        if (!r.isOverdue()) {
+            message.append(rejectedClaim
+                    ? "Marked as not received. " + r.getBorrower().getFullName() + " still has "
+                      + r.getItem().getName() + ", due " + r.getDueDate() + "."
+                    : "You can report an item as not received only after its due date.");
+            return null;
+        }
         if (r.isReportedUnreturned()) {
             message.append("You already reported this item. Lab staff are handling it.");
             return null;
         }
-        try {
-            r.reportNotReceived();
-        } catch (IllegalStateException e) {
-            message.append(e.getMessage());
-            return null;
-        }
+        r.reportNotReceived();
         records.save(r);
         message.append("Reported to lab staff: ").append(r.getBorrower().getFullName())
                .append(" has not returned ").append(r.getItem().getName()).append(".");
@@ -175,7 +272,7 @@ public class BorrowService {
 
     public long countOpenBorrows(User borrower) {
         return records.findAll().stream()
-                .filter(r -> r.isBorrowedBy(borrower) && (r.isPending() || r.isActive()))
+                .filter(r -> r.isBorrowedBy(borrower) && (r.isPending() || r.isApproved() || r.isActive()))
                 .count();
     }
 
@@ -189,16 +286,17 @@ public class BorrowService {
     // this borrower's requests that aren't actual lending records yet
     public List<BorrowRecord> myRequests(User borrower) {
         return newestFirst().stream()
-                .filter(r -> r.isBorrowedBy(borrower) && (r.isPending() || r.isDeclined()))
+                .filter(r -> r.isBorrowedBy(borrower) && (r.isPending() || r.isDeclined() || r.isCancelled()))
                 .toList();
     }
 
     // lending records aka approved borrows. lab staff sees everything, everyone else just their own
     public List<BorrowRecord> lendingRecords(User viewer, String filter) {
         return newestFirst().stream()
-                .filter(r -> r.isActive() || r.isReturned())
+                .filter(r -> r.isApproved() || r.isActive() || r.isReturned())
                 .filter(r -> viewer.isAdmin() || r.isLentBy(viewer) || r.isBorrowedBy(viewer))
                 .filter(r -> switch (filter == null ? "all" : filter) {
+                    case "pickup" -> r.isApproved();
                     case "active" -> r.isActive() && !r.isOverdue();
                     case "overdue" -> r.isOverdue();
                     case "returned" -> r.isReturned();

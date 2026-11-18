@@ -9,7 +9,7 @@
     <div class="page-head">
         <div>
             <h1>Requests</h1>
-            <p>Approve or decline requests for your items, and follow the requests you sent.</p>
+            <p>Approve or decline requests for your items, and follow the requests you sent. When you approve, set where and when the borrower picks the item up.</p>
         </div>
     </div>
 
@@ -28,17 +28,22 @@
                     <b>Wants it</b><span th:text="${r.requestedDays + ' day(s) · requested ' + r.requestDate}">days</span>
                 </div>
             </div>
-            <div class="row">
-                <form method="post" th:action="@{/requests/approve}">
-                    <input type="hidden" name="recordId" th:value="${r.id}">
-                    <button type="submit" class="ok">Approve</button>
-                </form>
-                <form method="post" th:action="@{/requests/decline}">
-                    <input type="hidden" name="recordId" th:value="${r.id}">
-                    <button type="submit" class="ghost">Decline</button>
-                </form>
-            </div>
+            <form method="post" th:action="@{/requests/decline}">
+                <input type="hidden" name="recordId" th:value="${r.id}">
+                <button type="submit" class="ghost">Decline</button>
+            </form>
         </div>
+        <!-- approving = setting where + when they pick it up -->
+        <form method="post" th:action="@{/requests/approve}" class="meetup-form">
+            <input type="hidden" name="recordId" th:value="${r.id}">
+            <label class="field">Pickup place
+                <input name="meetupPlace" required maxlength="120" placeholder="e.g. CICS lobby, Room 204">
+            </label>
+            <label class="field">Pickup date &amp; time
+                <input type="datetime-local" name="meetupTime" required>
+            </label>
+            <button type="submit" class="ok">Approve</button>
+        </form>
     </div>
     <div class="card empty" th:if="${#lists.isEmpty(incoming)}"><p>No requests waiting for you.</p></div>
 
@@ -58,7 +63,7 @@
         </div>
     </div>
     <div class="card empty" th:if="${#lists.isEmpty(outgoing)}">
-        <p>No pending or declined requests. Approved ones appear in <a th:href="@{/records}">My records</a>.</p>
+        <p>No pending, declined or cancelled requests. Approved ones appear in <a th:href="@{/records}">My records</a> with the pickup details.</p>
     </div>
 </main>
 </body>

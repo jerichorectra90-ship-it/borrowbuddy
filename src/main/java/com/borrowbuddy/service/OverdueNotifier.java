@@ -21,6 +21,10 @@ import static com.borrowbuddy.service.EmailService.esc;
 //    (max once every 2 days per record), and lab staff gets a summary of everyone overdue
 //  - lab staff gets emailed right away when a lender reports "Not received"
 //  - lab staff can also send a reminder or run the check by hand from the admin dashboard
+//  - no reminders while a return is pending (borrower already said they gave it back)
+// plus 2 emails for the handoff:
+//  - borrower gets the pickup place/time when the owner approves
+//  - owner gets told when the borrower clicks "I returned it", so they can confirm
 @Service
 public class OverdueNotifier {
     private static final int REMINDER_EVERY_DAYS = 2;
@@ -53,6 +57,7 @@ public class OverdueNotifier {
         }
         int reminders = 0;
         for (BorrowRecord r : overdue) {
+            if (r.isReturnPending()) continue; // they said they returned it, wait for the owner
             if (r.getLastReminderDate() == null
                     || ChronoUnit.DAYS.between(r.getLastReminderDate(), BorrowRecord.today()) >= REMINDER_EVERY_DAYS) {
                 if (sendBorrowerReminder(r)) reminders++;
@@ -70,6 +75,10 @@ public class OverdueNotifier {
         if (!r.isOverdue()) {
             return "That record is not overdue.";
         }
+        if (r.isReturnPending()) {
+            return r.getBorrower().getFullName() + " says they already returned it. Waiting for "
+                    + r.getLender().getFullName() + " to confirm.";
+        }
         return sendBorrowerReminder(r)
                 ? "Reminder emailed to " + r.getBorrower().getFullName() + "."
                 : "The reminder could not be sent. See the Email log tab.";
@@ -81,6 +90,36 @@ public class OverdueNotifier {
                 + recordTable(List.of(r))
                 + "<p>Open the <a href=\"" + siteUrl + "/admin\">BorrowBuddy admin dashboard</a> to follow up.</p>";
         emailAdmins("Not returned: " + r.getItem().getName() + " (borrowed by " + r.getBorrower().getFullName() + ")", html);
+    }
+
+    // owner approved: send the borrower where + when to pick it up
+    public void emailMeetupDetails(BorrowRecord r) {
+        User b = r.getBorrower();
+        User owner = r.getLender();
+        String html = "<p>Hi " + esc(b.getFullName()) + ",</p>"
+                + "<p>" + esc(owner.getFullName()) + " approved your request for <b>" + esc(r.getItem().getName()) + "</b>.</p>"
+                + "<table cellpadding=\"6\" style=\"border-collapse:collapse;border:1px solid #ddd\">"
+                + "<tr><td><b>Pickup place</b></td><td>" + esc(r.getMeetupPlace()) + "</td></tr>"
+                + "<tr><td><b>Pickup time</b></td><td>" + BorrowService.MEETUP_FORMAT.format(r.getMeetupTime()) + "</td></tr>"
+                + "<tr><td><b>Owner contact</b></td><td>" + esc(owner.getProfile().getContactInfo()) + "</td></tr>"
+                + "<tr><td><b>Borrow period</b></td><td>" + r.getRequestedDays() + " day(s), starting the day you pick it up</td></tr>"
+                + "</table>"
+                + "<p>Can't make it? Message the owner using the contact above.</p>"
+                + "<p>See it in <a href=\"" + siteUrl + "/records\">My records</a>.</p>"
+                + "<p>— BorrowBuddy, UST-Legazpi</p>";
+        email.send(b.getUstlAccount(), b.getFullName(), "Approved: pick up " + r.getItem().getName(), html);
+    }
+
+    // borrower said "I returned it": ask the owner to confirm
+    public void emailReturnClaim(BorrowRecord r) {
+        User owner = r.getLender();
+        String html = "<p>Hi " + esc(owner.getFullName()) + ",</p>"
+                + "<p>" + esc(r.getBorrower().getFullName()) + " says they returned <b>" + esc(r.getItem().getName())
+                + "</b> on " + r.getReturnClaimedDate() + ".</p>"
+                + "<p>Open <a href=\"" + siteUrl + "/records\">My records</a> and click <b>Received</b> if you have it, "
+                + "or <b>Not received</b> if you don't.</p>"
+                + "<p>— BorrowBuddy, UST-Legazpi</p>";
+        email.send(owner.getUstlAccount(), owner.getFullName(), "Please confirm: " + r.getItem().getName() + " returned?", html);
     }
 
     private boolean sendBorrowerReminder(BorrowRecord r) {
@@ -132,7 +171,8 @@ public class OverdueNotifier {
               .append("</small></td><td>").append(esc(r.getLender().getFullName()))
               .append("</td><td>").append(r.getDueDate())
               .append("</td><td><b style=\"color:#c62828\">").append(r.getDaysOverdue())
-              .append("</b></td><td>").append(r.isReportedUnreturned() ? "Lender: not received" : "—")
+              .append("</b></td><td>").append(r.isReturnPending() ? "Borrower says returned " + r.getReturnClaimedDate()
+                      : r.isReportedUnreturned() ? "Lender: not received" : "—")
               .append("</td></tr>");
         }
         return sb.append("</table>").toString();

@@ -63,6 +63,7 @@
                         <span class="badge b-overdue" th:text="${r.daysOverdue + ' day(s) late'}">1 day late</span>
                         <span class="chip admin" th:if="${r.reportedUnreturned}" th:text="${'Lender reported not received · ' + r.reportedDate}">Reported</span>
                         <span class="chip" th:if="${r.borrower.suspended}">Borrower suspended</span>
+                        <span class="chip" th:if="${r.returnPending}" th:text="${'Borrower says returned · ' + r.returnClaimedDate + ' · waiting for owner'}">Return pending</span>
                     </div>
                     <div class="people">
                         <b>Borrower</b><span th:text="${r.borrower.fullName + ' · ' + r.borrower.ustlAccount + ' · ' + r.borrower.profile.contactInfo}">b</span>

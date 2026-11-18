@@ -52,13 +52,15 @@ public class DataSeeder implements CommandLineRunner {
 
         // returned on time - Jericho borrowed Maria's calcu last week
         BorrowRecord returned = new BorrowRecord(casio, jericho, 3);
-        returned.approve(BorrowRecord.today().minusDays(7));
+        returned.approve("CICS lobby", BorrowRecord.today().minusDays(7).atTime(10, 0));
+        returned.handOver(BorrowRecord.today().minusDays(7));
         returned.markReturned(BorrowRecord.today().minusDays(5));
         records.save(returned);
 
         // overdue one - Maria took the org's laptop charger for 1 day, that was 4 days ago
         BorrowRecord overdue = new BorrowRecord(laptopCharger, maria, 1);
-        overdue.approve(BorrowRecord.today().minusDays(4));
+        overdue.approve("Computer Society office", BorrowRecord.today().minusDays(4).atTime(13, 0));
+        overdue.handOver(BorrowRecord.today().minusDays(4));
         records.save(overdue);
 
         // pending - Maria wants Jericho's soldering kit (gonna approve this one live in the demo)

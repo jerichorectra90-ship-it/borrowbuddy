@@ -152,7 +152,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .b-reserved, .b-pending { background: var(--info-soft); color: var(--info); }
 .b-borrowed { background: var(--warn-soft); color: var(--warn); }
 .b-overdue, .b-returned-late { background: var(--bad-soft); color: var(--bad); }
-.b-declined { background: var(--muted-soft); color: var(--ink-3); }
+.b-declined, .b-cancelled { background: var(--muted-soft); color: var(--ink-3); }
+.b-waiting-for-pickup, .b-approved { background: var(--info-soft); color: var(--info); }
+.b-return-pending { background: var(--ok-soft); color: var(--ok); }
 .chip { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--muted-soft); color: var(--ink-2); font-size: 12px; font-weight: 600; }
 .chip.admin { background: #fff1d6; color: var(--warn); }
 .chip.officer { background: var(--info-soft); color: var(--info); }
@@ -216,6 +218,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--b
 .timeline div { display: flex; flex-direction: column; }
 .timeline small { color: var(--ink-3); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
 .card.is-overdue { border-left: 4px solid var(--bad); }
+.meetup-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--muted-soft); }
 
 /* stats */
 .stats { display: grid; gap: 12px; grid-template-columns: repeat(3, 1fr); margin-bottom: 8px; }
@@ -337,6 +340,8 @@ tr.overdue-row td { background: #fff7f7; }
     .rec > .row form, .rec > form { flex: 1 1 140px; }
     .rec > .row form button, .rec > form button { width: 100%; }
     .rec .people { grid-template-columns: 1fr; gap: 0; }
+    .meetup-form { grid-template-columns: 1fr; }
+    .meetup-form button { width: 100%; }
     .rec .people b { margin-top: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
 
     .tabs { display: flex; width: 100%; overflow-x: auto; flex-wrap: nowrap; }
