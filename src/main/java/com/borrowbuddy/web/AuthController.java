@@ -44,11 +44,26 @@ public class AuthController {
         Optional<User> found = a.contains("@")
                 ? users.findByUstlAccountIgnoreCase(a)
                 : users.findByStudentId(a);
-        if (found.isEmpty() || !found.get().checkPassword(password)) {
+        if (found.isEmpty()) {
             model.addAttribute("error", "Wrong UST-L account or password.");
             return "login";
         }
         User user = found.get();
+        // ACCOUNT LOCKOUT - while locked, even the right password is refused
+        if (user.isLocked()) {
+            model.addAttribute("error", lockedMessage(user));
+            return "login";
+        }
+        if (!user.checkPassword(password)) {
+            boolean nowLocked = user.recordFailedLogin();
+            users.save(user);
+            model.addAttribute("error", nowLocked ? lockedMessage(user)
+                    : "Wrong UST-L account or password. " + user.loginAttemptsLeft()
+                      + (user.loginAttemptsLeft() == 1 ? " try" : " tries") + " left before the account is locked.");
+            return "login";
+        }
+        user.resetFailedLogins();
+        users.save(user);
         // right password but email never verified -> no login, send them to enter the code
         if (!user.isEmailVerified()) {
             session.setAttribute(PENDING, user.getId());
@@ -107,6 +122,12 @@ public class AuthController {
             model.addAttribute("error", e.getMessage());
             return "register";
         }
+    }
+
+    static String lockedMessage(User user) {
+        long m = user.minutesUntilUnlocked();
+        return "Too many failed log in attempts. This account is locked for " + m
+                + (m == 1 ? " minute." : " minutes.") + " Try again later.";
     }
 
     // ===== email verification =====

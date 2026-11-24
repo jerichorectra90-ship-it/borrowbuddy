@@ -214,8 +214,25 @@ public class BorrowBuddyApplication {
                     ? users.findByUstlAccountIgnoreCase(account)
                     : users.findByStudentId(account);
             // <Login correct?>
-            if (found.isPresent() && found.get().checkPassword(password)) {
+            // <Account locked?> too many wrong passwords -> refused even with the right one
+            if (found.isPresent() && found.get().isLocked()) {
+                System.out.println(">> Too many failed log in attempts. This account is locked for "
+                        + found.get().minutesUntilUnlocked() + " minute(s). Try again later.");
+                continue;
+            }
+            if (found.isPresent() && !found.get().checkPassword(password)) {
                 User u = found.get();
+                boolean nowLocked = u.recordFailedLogin();
+                users.save(u);
+                System.out.println(nowLocked
+                        ? ">> Too many failed log in attempts. This account is now locked for " + User.LOCKOUT_MINUTES + " minutes."
+                        : ">> Login incorrect. " + u.loginAttemptsLeft() + " tries left before the account is locked.");
+                continue;
+            }
+            if (found.isPresent()) {
+                User u = found.get();
+                u.resetFailedLogins();
+                u = users.save(u);
                 // <Email verified?> No -> enter the code first, no code = no login
                 if (!u.isEmailVerified() && !verifyEmail(u)) {
                     System.out.println(">> Email not verified. Back to Log in.");

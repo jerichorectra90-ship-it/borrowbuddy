@@ -54,6 +54,13 @@ public abstract class User {
     private Instant verificationSentAt;
     private Integer verificationAttempts;
 
+    // ACCOUNT LOCKOUT - stops password guessing. nullable for the existing table, null = 0 / not locked
+    private Integer failedLoginAttempts;
+    private Instant lockedUntil;
+
+    public static final int MAX_LOGIN_ATTEMPTS = 5;
+    public static final int LOCKOUT_MINUTES = 15;
+
     public static final int CODE_MINUTES_VALID = 10;
     public static final int MAX_CODE_ATTEMPTS = 5;
     public static final int RESEND_COOLDOWN_SECONDS = 60;
@@ -144,6 +151,43 @@ public abstract class User {
 
     public boolean checkPassword(String password) {
         return PasswordHasher.matches(password, passwordHash);
+    }
+
+    // ===== account lockout =====
+
+    public boolean isLocked() { return lockedUntil != null && Instant.now().isBefore(lockedUntil); }
+
+    // whole minutes left on the lock, rounded up (0 = not locked)
+    public long minutesUntilUnlocked() {
+        if (!isLocked()) return 0;
+        long seconds = Duration.between(Instant.now(), lockedUntil).getSeconds();
+        return Math.max(1, (seconds + 59) / 60);
+    }
+
+    // call after a wrong password. returns true if this attempt locked the account
+    public boolean recordFailedLogin() {
+        if (lockedUntil != null && !isLocked()) { // an old lock ran out -> start counting again
+            lockedUntil = null;
+            failedLoginAttempts = 0;
+        }
+        int attempts = (failedLoginAttempts == null ? 0 : failedLoginAttempts) + 1;
+        if (attempts >= MAX_LOGIN_ATTEMPTS) {
+            lockedUntil = Instant.now().plus(Duration.ofMinutes(LOCKOUT_MINUTES));
+            failedLoginAttempts = 0;
+            return true;
+        }
+        failedLoginAttempts = attempts;
+        return false;
+    }
+
+    public int loginAttemptsLeft() {
+        return MAX_LOGIN_ATTEMPTS - (failedLoginAttempts == null ? 0 : failedLoginAttempts);
+    }
+
+    // call after a correct password
+    public void resetFailedLogins() {
+        failedLoginAttempts = null;
+        lockedUntil = null;
     }
 
     // ===== email verification =====

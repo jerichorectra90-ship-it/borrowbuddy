@@ -5,6 +5,7 @@ import com.borrowbuddy.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 // puts some demo data in the db on first run, skips it if there are users already
 // pw for every demo account is Borrow@123 (has to pass the strong password rule).
@@ -12,6 +13,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class DataSeeder implements CommandLineRunner {
     private static final String DEMO_PASSWORD = "Borrow@123";
+    private static final String OLD_DEMO_PASSWORD = "borrow123"; // before the strong password rule
+    private static final List<String> DEMO_ACCOUNTS = List.of(
+            "jericho.rectra@ust-legazpi.edu.ph", "maria.santos@ust-legazpi.edu.ph",
+            "paolo.reyes@ust-legazpi.edu.ph", "delacruz@ust-legazpi.edu.ph");
+
+    // databases made before the strong password rule still have the weak demo password.
+    // switch those demo accounts to the new one. only touches an account whose password is
+    // STILL borrow123, so a demo password someone already changed is left alone
+    private void upgradeOldDemoPasswords() {
+        for (String email : DEMO_ACCOUNTS) {
+            users.findByUstlAccountIgnoreCase(email).ifPresent(u -> {
+                if (u.checkPassword(OLD_DEMO_PASSWORD)) {
+                    u.setPassword(DEMO_PASSWORD);
+                    users.save(u);
+                }
+            });
+        }
+    }
 
     private final UserRepository users;
     private final ItemRepository items;
@@ -26,7 +45,10 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (users.count() > 0) return;
+        if (users.count() > 0) {
+            upgradeOldDemoPasswords();
+            return;
+        }
 
         // POLYMORPHISM - diff kinds of User but they all get saved thru the same User repo
         User jericho = users.save(new Student("Jericho Rectra", "jericho.rectra@ust-legazpi.edu.ph",
