@@ -46,7 +46,7 @@ public class BorrowBuddyApplication {
     public static void main(String[] args) {
         boolean web = System.getenv("PORT") != null || Arrays.asList(args).contains("--web");
         if (web) {
-            SpringApplication.run(BorrowBuddyApplication.class, args);
+            runWebsiteWithRetry(args);
             return;
         }
 
@@ -100,6 +100,29 @@ public class BorrowBuddyApplication {
         System.exit(0);
     }
 
+
+    // website start. if the database is not reachable yet (e.g. Supabase temporarily blocking
+    // connections after too many failed logins), wait and try again instead of crashing right away.
+    // 10 tries x 45s = about 8 minutes, still inside Render's deploy time limit
+    private static void runWebsiteWithRetry(String[] args) {
+        final int maxTries = 10;
+        for (int attempt = 1; ; attempt++) {
+            try {
+                SpringApplication.run(BorrowBuddyApplication.class, args);
+                return;
+            } catch (RuntimeException e) {
+                if (attempt >= maxTries) throw e;
+                System.out.println(">>> Could not start (database not reachable?). Try " + attempt + "/" + maxTries
+                        + " failed, retrying in 45 seconds...");
+                try {
+                    Thread.sleep(45_000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
+            }
+        }
+    }
 
     // Windows: run the "cls" command. Mac/Linux: ANSI escape code that clears the screen
     private static void clearScreen() {
