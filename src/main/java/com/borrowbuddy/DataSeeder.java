@@ -14,7 +14,7 @@ import java.util.List;
 public class DataSeeder implements CommandLineRunner {
     private static final String DEMO_PASSWORD = "Borrow@123";
     private static final String OLD_DEMO_PASSWORD = "borrow123"; // before the strong password rule
-    private static final List<String> DEMO_ACCOUNTS = List.of(
+    public static final List<String> DEMO_ACCOUNTS = List.of(
             "jericho.rectra@ust-legazpi.edu.ph", "maria.santos@ust-legazpi.edu.ph",
             "paolo.reyes@ust-legazpi.edu.ph", "delacruz@ust-legazpi.edu.ph");
 

@@ -151,7 +151,7 @@
     <!-- tab 4: email log -->
     <section class="tab-panel" id="tab-emails">
         <p class="faint small" th:if="${emailReady and !#strings.isEmpty(emailRedirect)}"
-           th:text="${'Demo mode: all emails go to ' + emailRedirect}"></p>
+           th:text="${'Demo mode: emails for the sample demo accounts go to ' + emailRedirect + ' (real users get their own)'}"></p>
         <div class="card table-wrap" th:unless="${#lists.isEmpty(notifications)}">
             <table>
                 <thead><tr><th>When</th><th>To</th><th>Subject</th><th>Status</th></tr></thead>

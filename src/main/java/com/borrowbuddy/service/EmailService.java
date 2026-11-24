@@ -1,5 +1,6 @@
 package com.borrowbuddy.service;
 
+import com.borrowbuddy.DataSeeder;
 import com.borrowbuddy.model.Notification;
 import com.borrowbuddy.repository.NotificationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +22,8 @@ import java.util.Map;
 //   BREVO_API_KEY    - api key from Brevo (SMTP & API > API keys)
 //   MAIL_FROM        - sender address, has to be verified in Brevo
 //   ADMIN_EMAIL      - where the lab staff alerts go (if empty it uses the lab staff accounts' emails)
-//   MAIL_REDIRECT_TO - optional, sends ALL emails to this one inbox (handy for demos w/ the sample accounts)
+//   MAIL_REDIRECT_TO - optional, emails to the made-up demo accounts (DataSeeder) go to this inbox instead.
+//                      real registered users still get their own emails
 @Service
 public class EmailService {
     private final NotificationRepository log;
@@ -58,8 +60,11 @@ public class EmailService {
 
     // true = Brevo took the email
     public boolean send(String to, String toName, String subject, String html) {
-        String actualTo = redirectTo.isEmpty() ? to : redirectTo;
-        String actualSubject = redirectTo.isEmpty() ? subject : subject + " [for " + to + "]";
+        // only the made-up demo accounts get redirected. real users (anyone who registered)
+        // always get their own email, even when MAIL_REDIRECT_TO is set
+        boolean redirect = !redirectTo.isEmpty() && isDemoAccount(to);
+        String actualTo = redirect ? redirectTo : to;
+        String actualSubject = redirect ? subject + " [for " + to + "]" : subject;
 
         if (!isConfigured()) {
             log.save(new Notification(to, subject, Notification.NOT_CONFIGURED,
@@ -81,7 +86,7 @@ public class EmailService {
                     .build();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             boolean ok = response.statusCode() / 100 == 2;
-            String detail = redirectTo.isEmpty() ? null : "Redirected to " + redirectTo;
+            String detail = redirect ? "Redirected to " + redirectTo : null;
             log.save(new Notification(to, subject, ok ? Notification.SENT : Notification.FAILED,
                     ok ? detail : "Brevo error " + response.statusCode() + ": " + response.body()));
             return ok;
@@ -90,6 +95,10 @@ public class EmailService {
             log.save(new Notification(to, subject, Notification.FAILED, e.getClass().getSimpleName() + ": " + e.getMessage()));
             return false;
         }
+    }
+
+    private static boolean isDemoAccount(String address) {
+        return address != null && DataSeeder.DEMO_ACCOUNTS.stream().anyMatch(d -> d.equalsIgnoreCase(address.trim()));
     }
 
     // escape whatever the user typed before it goes in the html email
