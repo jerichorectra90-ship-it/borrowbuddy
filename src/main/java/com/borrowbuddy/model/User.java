@@ -2,6 +2,9 @@ package com.borrowbuddy.model;
 
 import com.borrowbuddy.security.PasswordHasher;
 import jakarta.persistence.*;
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.regex.Pattern;
 
 // INHERITANCE - parent class of Student, OrgOfficer, LabStaff
@@ -41,6 +44,20 @@ public abstract class User {
     // lab staff sets this when someone doesn't return an item. nullable so the column can be
     // added to the existing table, null just means not suspended
     private Boolean suspended;
+
+    // EMAIL VERIFICATION - a new account must enter the 6-digit code sent to its UST-L email.
+    // nullable so the columns can be added to the existing table: null = an account made before
+    // verification existed, those count as verified so they keep working
+    private Boolean emailVerified;
+    private String verificationCodeHash; // hashed like a password, the plain code is never saved
+    private Instant verificationExpiresAt;
+    private Instant verificationSentAt;
+    private Integer verificationAttempts;
+
+    public static final int CODE_MINUTES_VALID = 10;
+    public static final int MAX_CODE_ATTEMPTS = 5;
+    public static final int RESEND_COOLDOWN_SECONDS = 60;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     protected User() {}
 
@@ -104,18 +121,79 @@ public abstract class User {
         this.studentId = sid;
     }
 
+    // STRONG PASSWORD - checked here on the server, so it applies to the website AND the terminal
+    // version and can't be skipped by editing the HTML form
+    public static final String PASSWORD_RULE =
+            "at least 8 characters, with a letter, a number and a special character (e.g. ! @ # $ %)";
+
     public void setPassword(String password) {
         if (password == null || password.length() < 8) {
             throw new IllegalArgumentException("Password must be at least 8 characters.");
         }
-        if (!password.matches(".*\\p{L}.*") || !password.matches(".*\\d.*")) {
-            throw new IllegalArgumentException("Password must have at least one letter and one number.");
+        if (password.length() > 128) {
+            throw new IllegalArgumentException("Password must be at most 128 characters.");
+        }
+        boolean hasLetter = password.matches(".*\\p{L}.*");
+        boolean hasNumber = password.matches(".*\\d.*");
+        boolean hasSpecial = password.matches(".*[^\\p{L}\\d\\s].*"); // anything not a letter, digit or space
+        if (!hasLetter || !hasNumber || !hasSpecial) {
+            throw new IllegalArgumentException("Password must have " + PASSWORD_RULE + ".");
         }
         this.passwordHash = PasswordHasher.hash(password);
     }
 
     public boolean checkPassword(String password) {
         return PasswordHasher.matches(password, passwordHash);
+    }
+
+    // ===== email verification =====
+
+    public boolean isEmailVerified() { return !Boolean.FALSE.equals(emailVerified); }
+
+    // makes a new random 6-digit code, keeps only its hash, and returns the plain code so it can be emailed
+    public String startVerification() {
+        String code = String.format("%06d", RANDOM.nextInt(1_000_000));
+        Instant now = Instant.now();
+        this.emailVerified = false;
+        this.verificationCodeHash = PasswordHasher.hash(code);
+        this.verificationSentAt = now;
+        this.verificationExpiresAt = now.plus(Duration.ofMinutes(CODE_MINUTES_VALID));
+        this.verificationAttempts = 0;
+        return code;
+    }
+
+    // seconds left before another code can be sent (0 = can send now). stops email spamming
+    public long secondsUntilResendAllowed() {
+        if (verificationSentAt == null) return 0;
+        long passed = Duration.between(verificationSentAt, Instant.now()).getSeconds();
+        return Math.max(0, RESEND_COOLDOWN_SECONDS - passed);
+    }
+
+    // throws with the reason if the code is wrong, expired or tried too many times
+    public void verifyEmail(String code) {
+        if (isEmailVerified()) return;
+        if (verificationCodeHash == null || verificationExpiresAt == null) {
+            throw new IllegalArgumentException("No verification code yet. Request a new code.");
+        }
+        int attempts = verificationAttempts == null ? 0 : verificationAttempts;
+        if (attempts >= MAX_CODE_ATTEMPTS) {
+            throw new IllegalArgumentException("Too many wrong codes. Request a new code.");
+        }
+        if (Instant.now().isAfter(verificationExpiresAt)) {
+            throw new IllegalArgumentException("That code has expired. Request a new code.");
+        }
+        String typed = code == null ? "" : code.trim();
+        if (!typed.matches("\\d{6}") || !PasswordHasher.matches(typed, verificationCodeHash)) {
+            verificationAttempts = attempts + 1;
+            int left = MAX_CODE_ATTEMPTS - verificationAttempts;
+            throw new IllegalArgumentException(left > 0
+                    ? "Wrong code. " + left + (left == 1 ? " try" : " tries") + " left."
+                    : "Too many wrong codes. Request a new code.");
+        }
+        this.emailVerified = true;
+        this.verificationCodeHash = null;
+        this.verificationExpiresAt = null;
+        this.verificationAttempts = null;
     }
 
     public boolean isSameUser(User other) {

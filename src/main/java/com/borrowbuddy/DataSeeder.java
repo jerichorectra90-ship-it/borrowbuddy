@@ -7,10 +7,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 // puts some demo data in the db on first run, skips it if there are users already
-// pw for every demo account is borrow123
+// pw for every demo account is Borrow@123 (has to pass the strong password rule).
+// demo accounts count as already verified, so they can log in right away
 @Component
 public class DataSeeder implements CommandLineRunner {
-    private static final String DEMO_PASSWORD = "borrow123";
+    private static final String DEMO_PASSWORD = "Borrow@123";
 
     private final UserRepository users;
     private final ItemRepository items;

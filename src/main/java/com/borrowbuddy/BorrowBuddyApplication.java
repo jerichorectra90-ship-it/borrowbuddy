@@ -25,6 +25,7 @@ import com.borrowbuddy.repository.ItemRepository;
 import com.borrowbuddy.repository.UserRepository;
 import com.borrowbuddy.service.BorrowService;
 import com.borrowbuddy.service.OverdueNotifier;
+import com.borrowbuddy.service.VerificationService;
 
 
 //   WEBSITE  (Render sets PORT, or run with --web) -> the normal website
@@ -39,6 +40,7 @@ public class BorrowBuddyApplication {
     private static Scanner in;
     private static BorrowService service;
     private static OverdueNotifier notifier;
+    private static VerificationService verification;
     private static UserRepository users;
     private static ItemRepository items;
     private static BorrowRecordRepository records;
@@ -90,6 +92,7 @@ public class BorrowBuddyApplication {
         try (ConfigurableApplicationContext ctx = started) {
             service = ctx.getBean(BorrowService.class);
             notifier = ctx.getBean(OverdueNotifier.class);
+            verification = ctx.getBean(VerificationService.class);
             users = ctx.getBean(UserRepository.class);
             items = ctx.getBean(ItemRepository.class);
             records = ctx.getBean(BorrowRecordRepository.class);
@@ -178,7 +181,8 @@ public class BorrowBuddyApplication {
                 if (users.findByStudentId(studentId).isPresent())
                     throw new IllegalArgumentException("That student ID is already registered.");
                 String fullName = ask("Full name: ");
-                String password = ask("Password (min 8 chars, letter + number): ");
+                System.out.println(" Password rule: " + User.PASSWORD_RULE);
+                String password = ask("Password: ");
                 // COMPOSITION - User HAS-A Profile
                 Profile profile = new Profile(ask("Course: "), askInt("Year level (1-5): "),
                         ask("Block: "), ask("Contact info: "));
@@ -186,8 +190,9 @@ public class BorrowBuddyApplication {
                 User user = askYesNo("Are you an org officer? (Y/N): ")
                         ? new OrgOfficer(fullName, email, studentId, password, profile, ask("Organization: "))
                         : new Student(fullName, email, studentId, password, profile);
-                users.save(user);
-                System.out.println(">> Registered as " + user.getRole() + ". You can log in now.");
+                user = users.save(user);
+                System.out.println(">> Registered as " + user.getRole() + ".");
+                verifyEmail(user); // <Email verified?> before the account can log in
                 return;
             } catch (IllegalArgumentException e) {
                 System.out.println(">> " + e.getMessage() + " Please try again.");
@@ -200,7 +205,7 @@ public class BorrowBuddyApplication {
     private static User login() {
         title("LOG IN");
         System.out.println(" Demo: jericho.rectra@ust-legazpi.edu.ph  or  4240123 (student)");
-        System.out.println("       delacruz@ust-legazpi.edu.ph (lab staff)   password: borrow123");
+        System.out.println("       delacruz@ust-legazpi.edu.ph (lab staff)   password: Borrow@123");
         System.out.println(LINE);
         while (true) {
             String account = ask("UST-L email or student ID: ");
@@ -211,10 +216,46 @@ public class BorrowBuddyApplication {
             // <Login correct?>
             if (found.isPresent() && found.get().checkPassword(password)) {
                 User u = found.get();
+                // <Email verified?> No -> enter the code first, no code = no login
+                if (!u.isEmailVerified() && !verifyEmail(u)) {
+                    System.out.println(">> Email not verified. Back to Log in.");
+                    continue;
+                }
                 System.out.println(">> Login correct. Welcome, " + u.getFullName() + " (" + u.getRole() + ")");
                 return u;
             }
             System.out.println(">> Login incorrect. Back to Log in.");
+        }
+    }
+
+    // ===================== Verify UST-L email (6-digit code) =====================
+    // true = verified. online the code goes to the UST-L email; offline there's no internet to
+    // send email, so the code is printed here (marked as a simulated email) so the demo still works
+    private static boolean verifyEmail(User user) {
+        title("VERIFY YOUR UST-L EMAIL");
+        while (true) {
+            try {
+                if (verification.sendCode(user)) {
+                    System.out.println(">> A 6-digit code was sent to " + user.getUstlAccount() + ".");
+                } else {
+                    System.out.println(">> (Offline - no email could be sent. The code above is the simulated email.)");
+                }
+            } catch (IllegalArgumentException e) { // asked for a new code too soon
+                System.out.println(">> " + e.getMessage());
+            }
+            System.out.println(" The code expires in " + User.CODE_MINUTES_VALID + " minutes.");
+            while (true) {
+                String code = ask("Enter code (R = send a new code, 0 = cancel): ");
+                if (code.equals("0")) return false;
+                if (code.equalsIgnoreCase("R")) break;
+                try {
+                    verification.verify(user, code);
+                    System.out.println(">> Email verified. Your account is active.");
+                    return true;
+                } catch (IllegalArgumentException e) {
+                    System.out.println(">> " + e.getMessage());
+                }
+            }
         }
     }
 

@@ -35,8 +35,10 @@
                         <input type="text" name="studentId" placeholder="4250487" required inputmode="numeric" maxlength="7" pattern="[0-9]{7}" title="7 digits, e.g. 4250487" th:value="${form['studentId']}">
                     </label>
                 </div>
-                <label class="field">Password <span class="hint">At least 8 characters, with a letter and a number</span>
-                    <input type="password" name="password" minlength="8" required>
+                <label class="field">Password <span class="hint">At least 8 characters, with a letter, a number and a special character (e.g. ! @ # $ %)</span>
+                    <input type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password"
+                           pattern="(?=.*\p{L})(?=.*\d)(?=.*[^\p{L}\d\s]).{8,}"
+                           title="At least 8 characters, with a letter, a number and a special character, e.g. Borrow@123">
                 </label>
                 <div class="two">
                     <label class="field">Course

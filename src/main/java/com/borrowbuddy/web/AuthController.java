@@ -2,6 +2,7 @@ package com.borrowbuddy.web;
 
 import com.borrowbuddy.model.*;
 import com.borrowbuddy.repository.UserRepository;
+import com.borrowbuddy.service.VerificationService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,15 +14,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-// Feature 1 - UST-L login (email or student ID) + the student profile
+// Feature 1 - UST-L login (email or student ID) + email verification + the student profile
 @Controller
 public class AuthController {
+    // the account waiting for its email code. NOT logged in yet, can only use the /verify page
+    private static final String PENDING = "pendingVerifyUserId";
+
     private final UserRepository users;
     private final CurrentUser currentUser;
+    private final VerificationService verification;
 
-    public AuthController(UserRepository users, CurrentUser currentUser) {
+    public AuthController(UserRepository users, CurrentUser currentUser, VerificationService verification) {
         this.users = users;
         this.currentUser = currentUser;
+        this.verification = verification;
     }
 
     @GetMapping("/")
@@ -33,7 +39,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public String login(@RequestParam String account, @RequestParam String password,
-                        HttpSession session, Model model) {
+                        HttpSession session, Model model, RedirectAttributes flash) {
         String a = account.trim();
         Optional<User> found = a.contains("@")
                 ? users.findByUstlAccountIgnoreCase(a)
@@ -42,8 +48,22 @@ public class AuthController {
             model.addAttribute("error", "Wrong UST-L account or password.");
             return "login";
         }
-        currentUser.login(session, found.get());
-        return found.get().isAdmin() ? "redirect:/admin" : "redirect:/items";
+        User user = found.get();
+        // right password but email never verified -> no login, send them to enter the code
+        if (!user.isEmailVerified()) {
+            session.setAttribute(PENDING, user.getId());
+            String message;
+            try {
+                verification.sendCode(user);
+                message = "Your email is not verified yet. We sent a new code to " + user.getUstlAccount() + ".";
+            } catch (IllegalArgumentException e) { // a code was sent less than a minute ago
+                message = "Your email is not verified yet. Enter the code we sent to " + user.getUstlAccount() + ".";
+            }
+            flash.addFlashAttribute("message", message);
+            return "redirect:/verify";
+        }
+        currentUser.login(session, user);
+        return user.isAdmin() ? "redirect:/admin" : "redirect:/items";
     }
 
     @GetMapping("/register")
@@ -53,7 +73,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public String register(@RequestParam Map<String, String> params, HttpSession session, Model model) {
+    public String register(@RequestParam Map<String, String> params, HttpSession session, Model model,
+                           RedirectAttributes flash) {
         Map<String, String> form = new HashMap<>(params);
         try {
             String email = form.getOrDefault("email", "").trim();
@@ -74,14 +95,64 @@ public class AuthController {
                             profile, form.get("organization"))
                     : new Student(form.get("fullName"), email, studentId, form.get("password"), profile);
             user = users.save(user);
-            currentUser.login(session, user);
-            return "redirect:/items";
+            // not logged in yet - they have to enter the code sent to their UST-L email first
+            session.setAttribute(PENDING, user.getId());
+            verification.sendCode(user);
+            flash.addFlashAttribute("message", "Account created. We sent a 6-digit code to "
+                    + user.getUstlAccount() + ". Enter it below to activate your account.");
+            return "redirect:/verify";
         } catch (IllegalArgumentException e) {
             form.remove("password");
             model.addAttribute("form", form);
             model.addAttribute("error", e.getMessage());
             return "register";
         }
+    }
+
+    // ===== email verification =====
+
+    private User pendingUser(HttpSession session) {
+        Object id = session.getAttribute(PENDING);
+        return id instanceof Long ? users.findById((Long) id).orElse(null) : null;
+    }
+
+    @GetMapping("/verify")
+    public String verifyForm(HttpSession session, Model model) {
+        User user = pendingUser(session);
+        if (user == null) return "redirect:/";
+        model.addAttribute("email", user.getUstlAccount());
+        model.addAttribute("minutes", User.CODE_MINUTES_VALID);
+        return "verify";
+    }
+
+    @PostMapping("/verify")
+    public String verify(@RequestParam String code, HttpSession session, Model model) {
+        User user = pendingUser(session);
+        if (user == null) return "redirect:/";
+        try {
+            verification.verify(user, code);
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("email", user.getUstlAccount());
+            model.addAttribute("minutes", User.CODE_MINUTES_VALID);
+            model.addAttribute("error", e.getMessage());
+            return "verify";
+        }
+        session.removeAttribute(PENDING);
+        currentUser.login(session, user);
+        return user.isAdmin() ? "redirect:/admin" : "redirect:/items";
+    }
+
+    @PostMapping("/verify/resend")
+    public String resend(HttpSession session, RedirectAttributes flash) {
+        User user = pendingUser(session);
+        if (user == null) return "redirect:/";
+        try {
+            verification.sendCode(user);
+            flash.addFlashAttribute("message", "We sent a new code to " + user.getUstlAccount() + ".");
+        } catch (IllegalArgumentException e) {
+            flash.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/verify";
     }
 
     @GetMapping("/logout")

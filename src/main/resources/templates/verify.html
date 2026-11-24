@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Verify your email')}"></head>
+<body>
+<div class="auth">
+    <section class="auth-hero">
+        <span class="brand"><span class="logo">B</span>BorrowBuddy</span>
+        <h1>Check your UST-L inbox.</h1>
+        <p>We emailed a 6-digit code to make sure this UST-L account really belongs to you.
+            Your account works only after you enter it.</p>
+    </section>
+
+    <section class="auth-form">
+        <div class="card">
+            <h2>Verify your email</h2>
+            <p class="muted small">Code sent to <b th:text="${email}">name@ust-legazpi.edu.ph</b>.
+                It expires in <span th:text="${minutes}">10</span> minutes.</p>
+            <div class="alert info" th:if="${message}" th:text="${message}" style="margin-top:12px"></div>
+            <div class="alert bad" th:if="${error}" th:text="${error}" style="margin-top:12px"></div>
+            <form method="post" th:action="@{/verify}" class="stack" style="margin-top:16px">
+                <label class="field">Verification code
+                    <input type="text" name="code" placeholder="123456" required inputmode="numeric"
+                           maxlength="6" pattern="[0-9]{6}" title="The 6-digit code from your email"
+                           autocomplete="one-time-code" autofocus>
+                </label>
+                <button type="submit" class="block">Verify and continue</button>
+            </form>
+            <form method="post" th:action="@{/verify/resend}" style="margin-top:10px">
+                <button type="submit" class="ghost block">Send a new code</button>
+            </form>
+            <p class="small" style="margin-top:14px">Wrong account? <a th:href="@{/logout}">Back to log in</a></p>
+        </div>
+    </section>
+</div>
+</body>
+</html>
