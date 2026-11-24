@@ -26,6 +26,7 @@ import static com.borrowbuddy.service.EmailService.esc;
 //  - borrower gets the pickup place/time when the owner approves
 //  - owner gets told when the borrower clicks "I returned it", so they can confirm
 @Service
+@SuppressWarnings("null") // ids and records come from the database, so they are never null
 public class OverdueNotifier {
     private static final int REMINDER_EVERY_DAYS = 2;
 

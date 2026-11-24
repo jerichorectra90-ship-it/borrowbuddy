@@ -5,6 +5,7 @@ import com.borrowbuddy.repository.NotificationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -84,7 +85,7 @@ public class EmailService {
             log.save(new Notification(to, subject, ok ? Notification.SENT : Notification.FAILED,
                     ok ? detail : "Brevo error " + response.statusCode() + ": " + response.body()));
             return ok;
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException | IllegalArgumentException e) {
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             log.save(new Notification(to, subject, Notification.FAILED, e.getClass().getSimpleName() + ": " + e.getMessage()));
             return false;

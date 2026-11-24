@@ -22,25 +22,25 @@
                     </select>
                 </label>
                 <label class="field" id="orgField">Organization
-                    <input type="text" name="organization" placeholder="e.g. Computer Society" th:value="${form['organization']}">
+                    <input type="text" name="organization" placeholder="e.g. Computer Society" maxlength="60" th:value="${form['organization']}">
                 </label>
                 <label class="field">Full name
-                    <input type="text" name="fullName" required th:value="${form['fullName']}">
+                    <input type="text" name="fullName" placeholder="e.g. Juan Dela Cruz" maxlength="80" required title="First and last name, letters only" th:value="${form['fullName']}">
                 </label>
                 <div class="two">
                     <label class="field">UST-L email
-                        <input type="email" name="email" placeholder="name@ust-legazpi.edu.ph" required th:value="${form['email']}">
+                        <input type="email" name="email" placeholder="name.surname@ust-legazpi.edu.ph" required pattern="[A-Za-z0-9]+([._\-][A-Za-z0-9]+)*@ust-legazpi\.edu\.ph" title="Your UST-L email, e.g. juan.delacruz@ust-legazpi.edu.ph" th:value="${form['email']}">
                     </label>
                     <label class="field">Student ID
-                        <input type="text" name="studentId" placeholder="2024-00123" required th:value="${form['studentId']}">
+                        <input type="text" name="studentId" placeholder="4250487" required inputmode="numeric" maxlength="7" pattern="[0-9]{7}" title="7 digits, e.g. 4250487" th:value="${form['studentId']}">
                     </label>
                 </div>
-                <label class="field">Password <span class="hint">At least 6 characters</span>
-                    <input type="password" name="password" minlength="6" required>
+                <label class="field">Password <span class="hint">At least 8 characters, with a letter and a number</span>
+                    <input type="password" name="password" minlength="8" required>
                 </label>
                 <div class="two">
                     <label class="field">Course
-                        <input type="text" name="course" placeholder="e.g. BSIT" required th:value="${form['course']}">
+                        <input type="text" name="course" placeholder="e.g. BSIT" maxlength="40" required title="Letters only, e.g. BSIT" th:value="${form['course']}">
                     </label>
                     <label class="field">Year level
                         <select name="yearLevel">
@@ -51,10 +51,10 @@
                 </div>
                 <div class="two">
                     <label class="field">Block
-                        <input type="text" name="block" placeholder="e.g. 2G" required th:value="${form['block']}">
+                        <input type="text" name="block" placeholder="e.g. 2G" maxlength="6" required pattern="[A-Za-z0-9\-]+" title="Letters/numbers only, e.g. 2G" th:value="${form['block']}">
                     </label>
                     <label class="field">Contact info
-                        <input type="text" name="contactInfo" placeholder="Messenger or phone" required th:value="${form['contactInfo']}">
+                        <input type="text" name="contactInfo" placeholder="0917 123 4567 or Messenger name" maxlength="100" required th:value="${form['contactInfo']}">
                     </label>
                 </div>
                 <button type="submit" class="block">Create account</button>

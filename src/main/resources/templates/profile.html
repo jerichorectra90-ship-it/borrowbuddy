@@ -30,7 +30,7 @@
         <div class="card">
             <h2>Edit profile</h2>
             <form method="post" th:action="@{/profile}" class="stack" style="margin-top:12px">
-                <label class="field">Course <input type="text" name="course" required th:value="${user.profile.course}"></label>
+                <label class="field">Course <input type="text" name="course" maxlength="40" required title="Letters only, e.g. BSIT" th:value="${user.profile.course}"></label>
                 <div class="two">
                     <label class="field">Year level
                         <select name="yearLevel">
@@ -38,9 +38,9 @@
                                     th:selected="${y == user.profile.yearLevel}"></option>
                         </select>
                     </label>
-                    <label class="field">Block <input type="text" name="block" required th:value="${user.profile.block}"></label>
+                    <label class="field">Block <input type="text" name="block" maxlength="6" required pattern="[A-Za-z0-9\-]+" title="Letters/numbers only, e.g. 2G" th:value="${user.profile.block}"></label>
                 </div>
-                <label class="field">Contact info <input type="text" name="contactInfo" required th:value="${user.profile.contactInfo}"></label>
+                <label class="field">Contact info <input type="text" name="contactInfo" maxlength="100" required placeholder="0917 123 4567 or Messenger name" th:value="${user.profile.contactInfo}"></label>
                 <button type="submit">Save changes</button>
             </form>
         </div>

@@ -15,6 +15,7 @@ import java.util.List;
 
 // Features 2-4 - listing items, search by availability + category, borrow requests
 @Controller
+@SuppressWarnings("null") // ids and records come from the database, so they are never null
 public class ItemController {
     private static final List<String> CATEGORIES = List.of("Calculator", "Lab Tool", "Charger");
 

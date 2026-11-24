@@ -29,11 +29,11 @@ public class DataSeeder implements CommandLineRunner {
 
         // POLYMORPHISM - diff kinds of User but they all get saved thru the same User repo
         User jericho = users.save(new Student("Jericho Rectra", "jericho.rectra@ust-legazpi.edu.ph",
-                "2024-00123", DEMO_PASSWORD, new Profile("BSIT", 2, "2G", "Messenger: Jericho Rectra")));
+                "4240123", DEMO_PASSWORD, new Profile("BSIT", 2, "2G", "Messenger: Jericho Rectra")));
         User maria = users.save(new Student("Maria Santos", "maria.santos@ust-legazpi.edu.ph",
-                "2024-00456", DEMO_PASSWORD, new Profile("BSIT", 2, "2G", "0917 000 0001")));
+                "4240456", DEMO_PASSWORD, new Profile("BSIT", 2, "2G", "0917 000 0001")));
         User paolo = users.save(new OrgOfficer("Paolo Reyes", "paolo.reyes@ust-legazpi.edu.ph",
-                "2023-00789", DEMO_PASSWORD, new Profile("BSCS", 3, "3A", "Messenger: Paolo Reyes"),
+                "4230789", DEMO_PASSWORD, new Profile("BSCS", 3, "3A", "Messenger: Paolo Reyes"),
                 "Computer Society"));
         users.save(new LabStaff("Engr. Dela Cruz", "delacruz@ust-legazpi.edu.ph",
                 "STAFF-001", DEMO_PASSWORD, new Profile("Engineering Lab", 1, "Lab", "Lab Office, Room 101")));

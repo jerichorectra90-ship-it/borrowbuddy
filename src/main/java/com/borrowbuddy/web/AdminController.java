@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 // lab staff are the only ones who deal w/ borrowers that didn't return stuff:
 // email reminders, suspend / reinstate borrowing, and resolving the unreturned cases
 @Controller
+@SuppressWarnings("null") // ids and records come from the database, so they are never null
 public class AdminController {
     private static final List<String> TABS = List.of("unreturned", "pending", "users", "emails");
 

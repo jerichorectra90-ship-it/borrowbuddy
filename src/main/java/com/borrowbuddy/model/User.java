@@ -2,6 +2,7 @@ package com.borrowbuddy.model;
 
 import com.borrowbuddy.security.PasswordHasher;
 import jakarta.persistence.*;
+import java.util.regex.Pattern;
 
 // INHERITANCE - parent class of Student, OrgOfficer, LabStaff
 // ENCAPSULATION - private fields. no getter for the password on purpose, we only keep the hash
@@ -11,6 +12,14 @@ import jakarta.persistence.*;
 @DiscriminatorColumn(name = "role")
 public abstract class User {
     public static final String EMAIL_DOMAIN = "@ust-legazpi.edu.ph";
+
+    // part before the @: letters/numbers, can be split by single dots, dashes or underscores
+    // e.g. juan.delacruz, jdelacruz2 -> ok   |   .juan, juan..cruz, "asd fgh", !!! -> rejected
+    private static final Pattern EMAIL_LOCAL = Pattern.compile("^[a-z0-9]+([._-][a-z0-9]+)*$");
+    // letters (incl. ñ and accents), spaces, dots, apostrophes, dashes. e.g. "Ma. Clara O'Neil-Santos"
+    private static final Pattern NAME = Pattern.compile("^[\\p{L}][\\p{L} .'-]*[\\p{L}.]$");
+    // UST-L student number: 7 digits, e.g. 4250487
+    private static final Pattern STUDENT_ID = Pattern.compile("^\\d{7}$");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,6 +44,8 @@ public abstract class User {
 
     protected User() {}
 
+    @SuppressWarnings("OverridableMethodCallInConstructor") // setters validate input; they stay non-final for Hibernate proxies
+
     protected User(String fullName, String ustlAccount, String studentId, String password, Profile profile) {
         setFullName(fullName);
         setUstlAccount(ustlAccount);
@@ -56,24 +67,49 @@ public abstract class User {
         if (fullName == null || fullName.isBlank()) {
             throw new IllegalArgumentException("Full name is required.");
         }
-        this.fullName = fullName.trim();
+        String name = fullName.trim().replaceAll("\\s+", " ");
+        if (name.length() > 80 || !NAME.matcher(name).matches()) {
+            throw new IllegalArgumentException("Full name can only have letters, spaces, dots, apostrophes and dashes.");
+        }
+        if (name.split(" ").length < 2) {
+            throw new IllegalArgumentException("Enter your full name (first and last name).");
+        }
+        this.fullName = name;
     }
 
     public void setUstlAccount(String ustlAccount) {
         String email = ustlAccount == null ? "" : ustlAccount.trim().toLowerCase();
-        if (!email.endsWith(EMAIL_DOMAIN) || email.length() <= EMAIL_DOMAIN.length()) {
+        if (!email.endsWith(EMAIL_DOMAIN)) {
             throw new IllegalArgumentException("Use your UST-L email (ending in " + EMAIL_DOMAIN + ").");
+        }
+        String local = email.substring(0, email.length() - EMAIL_DOMAIN.length());
+        if (local.length() < 2 || local.length() > 64 || !EMAIL_LOCAL.matcher(local).matches()) {
+            throw new IllegalArgumentException("That is not a valid UST-L email. Use the format name.surname"
+                    + EMAIL_DOMAIN + " (letters, numbers, dots, dashes or underscores only).");
         }
         this.ustlAccount = email;
     }
 
     public void setStudentId(String studentId) {
-        this.studentId = (studentId == null || studentId.isBlank()) ? null : studentId.trim();
+        String sid = (studentId == null || studentId.isBlank()) ? null : studentId.trim();
+        // lab staff use staff IDs (e.g. STAFF-001), everyone else needs a real student number
+        if (!isAdmin()) {
+            if (sid == null) {
+                throw new IllegalArgumentException("Student ID is required.");
+            }
+            if (!STUDENT_ID.matcher(sid).matches()) {
+                throw new IllegalArgumentException("Student ID must be 7 digits, e.g. 4250487.");
+            }
+        }
+        this.studentId = sid;
     }
 
     public void setPassword(String password) {
-        if (password == null || password.length() < 6) {
-            throw new IllegalArgumentException("Password must be at least 6 characters.");
+        if (password == null || password.length() < 8) {
+            throw new IllegalArgumentException("Password must be at least 8 characters.");
+        }
+        if (!password.matches(".*\\p{L}.*") || !password.matches(".*\\d.*")) {
+            throw new IllegalArgumentException("Password must have at least one letter and one number.");
         }
         this.passwordHash = PasswordHasher.hash(password);
     }

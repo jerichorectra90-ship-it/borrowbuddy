@@ -27,8 +27,7 @@ import com.borrowbuddy.service.BorrowService;
 import com.borrowbuddy.service.OverdueNotifier;
 
 
-//   WEBSITE  (default) -> the normal website
-//   TERMINAL (run with --cli) -> the flowchart menu in the console
+//   WEBSITE  (Render sets PORT, or run with --web) -> the normal website
 //   User (Student / OrgOfficer / LabStaff) + Profile, Item (Calculator / LabTool / Charger),
 
 @SpringBootApplication
@@ -45,12 +44,13 @@ public class BorrowBuddyApplication {
     private static BorrowRecordRepository records;
 
     public static void main(String[] args) {
-        // website by default; pass --cli to get the terminal menu instead
-        boolean cli = Arrays.asList(args).contains("--cli");
-        if (!cli) {
+        boolean web = System.getenv("PORT") != null || Arrays.asList(args).contains("--web");
+        if (web) {
             SpringApplication.run(BorrowBuddyApplication.class, args);
             return;
         }
+
+        clearScreen(); // wipe old output/errors so the terminal version starts on a clean screen
 
         // terminal mode: no web server + hide the spring logs so only the flowchart steps show
         SpringApplication app = new SpringApplication(BorrowBuddyApplication.class);
@@ -58,9 +58,36 @@ public class BorrowBuddyApplication {
         app.setDefaultProperties(Map.of(
                 "spring.main.banner-mode", "off",
                 "logging.level.root", "ERROR"));
-        System.out.println("Connecting to the database, please wait...");
+        // ONLINE first: if DB_URL is set, try the Supabase database (same data as the live site).
+        // No internet / wrong password -> falls back to OFFLINE: a local H2 database file
+        // (./data/borrowbuddy.mv.db). Run with --offline to skip Supabase completely.
+        boolean tryOnline = System.getenv("DB_URL") != null && !System.getenv("DB_URL").isBlank()
+                && !Arrays.asList(args).contains("--offline");
+        ConfigurableApplicationContext started = null;
+        if (tryOnline) {
+            System.out.println("ONLINE MODE - connecting to the Supabase database, please wait...");
+            System.setProperty("spring.datasource.hikari.connection-timeout", "10000"); // give up after 10s
+            System.setProperty("logging.level.root", "OFF"); // hide the big red error if it fails
+            try {
+                started = app.run(args);
+            } catch (Exception e) {
+                System.out.println("Can't reach Supabase (no internet or wrong DB password). Switching to offline.");
+            }
+            System.clearProperty("spring.datasource.hikari.connection-timeout");
+            System.clearProperty("logging.level.root");
+        }
+        if (started == null) {
+            // system properties beat the DB_URL env var, so this forces the local database
+            System.setProperty("spring.datasource.url", "jdbc:h2:file:./data/borrowbuddy;MODE=PostgreSQL;AUTO_SERVER=TRUE");
+            System.setProperty("spring.datasource.username", "sa");
+            System.setProperty("spring.datasource.password", "");
+            System.setProperty("BREVO_API_KEY", ""); // no internet = no emails (they get logged as "Not configured")
+            System.out.println("OFFLINE MODE - using the local database in the data folder.");
+            System.out.println("Connecting to the database, please wait...");
+            started = app.run(args);
+        }
         // try-with-resources closes the Spring context automatically when the menu ends
-        try (ConfigurableApplicationContext ctx = app.run(args)) {
+        try (ConfigurableApplicationContext ctx = started) {
             service = ctx.getBean(BorrowService.class);
             notifier = ctx.getBean(OverdueNotifier.class);
             users = ctx.getBean(UserRepository.class);
@@ -73,6 +100,20 @@ public class BorrowBuddyApplication {
         System.exit(0);
     }
 
+
+    // Windows: run the "cls" command. Mac/Linux: ANSI escape code that clears the screen
+    private static void clearScreen() {
+        try {
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else {
+                System.out.print("\033[H\033[2J");
+                System.out.flush();
+            }
+        } catch (Exception e) {
+            // couldn't clear, not a big deal - just keep going
+        }
+    }
 
     private static void start() {
         while (true) {

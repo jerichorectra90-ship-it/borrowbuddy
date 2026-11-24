@@ -12,6 +12,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
+@SuppressWarnings("null") // ids and records come from the database, so they are never null
 public class BorrowService {
     public static final DateTimeFormatter MEETUP_FORMAT = DateTimeFormatter.ofPattern("MMM d, h:mm a");
 

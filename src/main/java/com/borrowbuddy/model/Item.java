@@ -30,6 +30,8 @@ public abstract class Item {
 
     protected Item() {}
 
+    @SuppressWarnings("OverridableMethodCallInConstructor") // setters validate input; they stay non-final for Hibernate proxies
+
     protected Item(String name, String description, User owner) {
         setName(name);
         setDescription(description);
